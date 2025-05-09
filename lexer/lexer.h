@@ -30,6 +30,8 @@ public:
     }
 
 protected:
+    virtual int tokenizedReturn(int r) {return r;}; // Just used for unit tests
+
     int iValue = -1;
     double fValue = -1;
     std::string sValue;

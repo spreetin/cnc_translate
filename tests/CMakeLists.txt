@@ -11,14 +11,20 @@ enable_testing()
 
 add_executable(
     cnc_testing
-    parser_test.h
-    lexer_test.h
+    parser_test.cpp
+    lexer_test.cpp
 )
 target_link_libraries(
     cnc_testing
-    cnc_common
+    cnc_parse_test
     GTest::gtest_main
 )
 
 include(GoogleTest)
 gtest_discover_tests(cnc_testing)
+
+add_custom_command(
+  TARGET cnc_testing
+  POST_BUILD
+  COMMAND $<TARGET_FILE:cnc_testing>
+)

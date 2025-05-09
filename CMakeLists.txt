@@ -7,10 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(cnc_translate main.cpp)
 
-target_link_libraries(cnc_translate cnc_common)
+target_link_libraries(cnc_translate cnc_parse)
 
-add_library (
-    cnc_common
+set(
+    common_src
     tokens/tokens.h
     lexer/lexer.h lexer/lexer.cpp
     parser/parser.h parser/parser.cpp
@@ -28,6 +28,16 @@ add_library (
     tokens/g_codes.h
     tokens/m_codes.h
 )
+
+add_library (
+    cnc_parse
+    ${common_src}
+)
+add_library (
+    cnc_parse_test
+    ${common_src}
+)
+set_target_properties(cnc_parse_test PROPERTIES COMPILE_FLAGS "-DTESTING")
 
 add_subdirectory(tests)
 

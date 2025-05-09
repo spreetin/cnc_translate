@@ -1,8 +1,16 @@
 #include <cctype>
+#include <iostream>
 #include <string>
 #include <set>
 #include "lexer.h"
 #include "../tokens/tokens.h"
+
+#ifdef TESTING
+#define RETURN(x) tokenizedReturn(x)
+#else
+#define RETURN(x) x
+#endif
+
 
 namespace NCParser {
 
@@ -20,12 +28,12 @@ int lexer::next()
 {
     // Helper to peek forward
     static auto peek = [this](bool single = false) -> char {
-        int p = pos;
         if (single){
-            return text.at(p);
+            return text.at(pos);
         }
+        int p = pos;
         while (text.length() > p){
-            if (text.at(p) == ' ' || text.at(p) == '\t' || text.at(p) == '\n'){
+            if (text.at(p) == ' ' || text.at(p) == '\t'){
                 p++;
             } else {
                 return text.at(p);
@@ -35,9 +43,11 @@ int lexer::next()
     };
 
     // Grab the next group of numeric characters
-    static auto grabInt = [&]() -> std::string {
-        int start = pos-1;
-        while (std::isdigit(peek())){
+    static auto grabInt = [&](int offset = 0) -> std::string {
+        while (pos < text.size() && (text.at(pos) == ' ' || text.at(pos) == '\t'))
+            pos++;
+        int start = pos+offset;
+        while (pos < text.size() && std::isdigit(text.at(pos))){
             pos++;
         }
         return text.substr(start, pos-start);
@@ -48,55 +58,59 @@ int lexer::next()
         if (!std::isdigit(peek())){
             return Token::unknown_code;
         }
-        pos++;
         std::string num = grabInt();
+        //std::cout << num;
         iValue = std::stoi(num);
         return token;
     };
 
     while (true){
         if (text.length() <= pos){
-            return Token::done;
+            return RETURN(Token::done);
         }
         char next = std::toupper(text.at(pos));
         pos++;
-        if (std::isalpha(peek())){
+        if (std::isalpha(next) && pos < text.size() && std::isalpha(text.at(pos))){
             int start = pos-1;
-            while (std::isalpha(peek(true))){
+            while (pos < text.size() && std::isalpha(text.at(pos))){
                 pos++;
             }
             std::string ml = text.substr(start, pos-start);
+            sValue = ml;
             if (multiletter.contains(ml)){
-                sValue = ml;
-                return Token::multi_letter;
+                return RETURN(Token::multi_letter);
             } else {
-                continue;
+                return RETURN(Token::unknown_function);
             }
         } else {
             switch (next){
+            case ' ':
+            case '\t':
+            case '\r':
+                continue;
             case 'G':
-                return getCode(Token::g_word);
+                return RETURN(getCode(Token::g_word));
             case 'M':
-                return getCode(Token::m_word);
+                return RETURN(getCode(Token::m_word));
             case 'N':
             {
                 if (!std::isdigit(peek()))
                     continue;
                 iValue = std::stoi(grabInt());
-                return Token::n_word;
+                return RETURN(Token::n_word);
             }
-            case 0: case 1: case 2: case 3: case 4:
-            case 5: case 6: case 7: case 8: case 9:
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
             {
-                sValue = grabInt();
+                sValue = grabInt(-1);
                 iValue = std::stoi(sValue);
-                return Token::num_literal;
+                return RETURN(Token::num_literal);
             }
             case '\n':
                 m_line++;
-                return Token::newline;
+                return RETURN(Token::newline);
             default:
-                return next;
+                return RETURN(next);
             }
         }
     }
