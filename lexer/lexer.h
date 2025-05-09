@@ -3,7 +3,6 @@
 
 #include <string>
 #include <set>
-#include "../brands/brands.h"
 
 namespace NCParser {
 
@@ -12,8 +11,10 @@ class lexer
 public:
     lexer();
 
-    void init(std::string text, MachineParameters param);
+    void init(std::string text, std::set<std::string> allowed_multiletters);
     int next();
+    int finishLine();
+    int finishComment(char end = ')');
 
     int intValue(){
         return iValue;
@@ -28,19 +29,15 @@ public:
         return m_line;
     }
 
-    static const std::set<int> g_codes;
-    static const std::set<int> m_codes;
-
 protected:
     int iValue = -1;
     double fValue = -1;
     std::string sValue;
 
     std::string text;
+    std::set<std::string> multiletter;
     int pos;
     int m_line;
-
-    MachineParameters param;
 };
 
 };

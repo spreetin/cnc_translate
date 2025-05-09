@@ -2,7 +2,7 @@
 #define TRAUBTX8H_DEFINITION_H
 
 #include "../../definition_base.h"
-#include "../../brands.h"
+#include "../../parameters.h"
 
 namespace NCParser {
 

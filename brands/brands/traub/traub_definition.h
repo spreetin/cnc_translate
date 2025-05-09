@@ -13,10 +13,12 @@ public:
     virtual void updateData(std::shared_ptr<std::map<int,GCode>> gCodes,
                     std::shared_ptr<std::map<int,MCode>> mCodes,
                     std::shared_ptr<std::map<int,FixedCycleDefinition>> fixedCycleDefinition) override;
-    virtual MachineParameters getParameters() override;
+    virtual MachineParameters getParameters() override {
+        return MachineParameters();
+    };
 
 protected:
-    MachineParameters updateParameters(MachineParameters param) override;
+    void updateParameters(MachineParameters * param) override;
 };
 
 };

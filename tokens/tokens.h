@@ -103,6 +103,7 @@ namespace NCParser {
         static const int rightsquare = ']';
         static const int bang = '!';
         static const int semicolon = ';';
+        static const int dollar = '$';
 
         // NC words
         static const int a_word = 'A';
@@ -112,6 +113,7 @@ namespace NCParser {
         static const int e_word = 'E';
         static const int f_word = 'F';
         static const int g_word = 'G';
+        static const int h_word = 'H';
         static const int i_word = 'I';
         static const int j_word = 'J';
         static const int k_word = 'K';
@@ -132,11 +134,20 @@ namespace NCParser {
         static const int z_word = 'Z';
 
         // Data types
-        static const int num_int = 200;
-        static const int num_float = 201;
-        static const int string = 202;
+        static const int num_literal = 200;
+        static const int num_int = 201;
+        static const int num_float = 202;
+        static const int string = 203;
 
         // Abstract functions
+        static const int unknown_function = 249;
+        static const int left_over_data = 250;
+        static const int unary_function = 251;
+        static const int binary_functions = 252;
+        static const int multary_functions = 253;
+        static const int block_function = 254;
+        static const int parameter = 255;
+        static const int multi_letter = 256;
         static const int prg_name = 257;
         static const int variable = 258;
         static const int comment = 259;

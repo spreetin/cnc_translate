@@ -4,7 +4,6 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include <limits>
 
 namespace NCParser {
 
@@ -33,6 +32,9 @@ public:
     void appendChild(parse_node *c){
         m_children.push_back(c);
     }
+    void appendChildren(std::vector<parse_node*> c){
+        m_children.insert(m_children.end(), c.begin(), c.end());
+    }
 
     // Values
     void setValue(std::variant<int,double,std::string> v){
@@ -41,15 +43,9 @@ public:
     std::variant<int,double,std::string> value(){
         return m_value;
     }
-    int intValue(){
-        return std::get<int>(m_value);
-    }
-    double doubleValue(){
-        return std::get<double>(m_value);
-    }
-    std::string stringValue(){
-        return std::get<std::string>(m_value);
-    }
+    int intValue();
+    double doubleValue();
+    std::string stringValue();
 
 protected:
     int m_code;

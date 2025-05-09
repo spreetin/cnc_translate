@@ -4,7 +4,7 @@
 #include <map>
 #include <memory>
 #include "../tokens/tokens.h"
-#include "brands.h"
+#include "parameters.h"
 
 namespace NCParser {
 
@@ -21,7 +21,7 @@ public:
     };
 
 protected:
-    virtual MachineParameters updateParameters(MachineParameters param) {return param;}
+    virtual void updateParameters(MachineParameters * param) {}
 };
 
 };

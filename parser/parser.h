@@ -6,11 +6,9 @@
 #include <variant>
 #include <memory>
 #include <set>
-#include "../tokens/tokens.h"
 #include "../lexer/lexer.h"
-#include "parse_gcodes.h"
-#include "parse_mcodes.h"
 #include "parse_node.h"
+#include "../brands/parameters.h"
 #include "../brands/brands.h"
 
 namespace NCParser {
@@ -18,32 +16,41 @@ namespace NCParser {
 class parser
 {
 public:
-    parser();
+    parser(Controllers controller, Manufacturers manufacturer, std::string machine);
 
-    void init(Controllers controller, Manufacturers manufacturer, std::string machine);
     bool parse(std::string text);
-
-    void clear();
 
     friend class parse_gcodes;
     friend class parse_mcodes;
 
 private:
+    void init(Controllers controller, Manufacturers manufacturer, std::string machine);
+
     void match(int code);
 
     void start();
     std::vector<parse_node *> list();
     parse_node *block();
+    parse_node *expr();
+    parse_node *assignment();
+    parse_node *variable();
+    parse_node *number();
+    std::vector<parse_node *> g();
+    parse_node *comment();
 
-    std::vector<parse_node*> optionlist(std::set<int> allowed = std::set<int>(
-                                           {Token::x_word, Token::y_word, Token::z_word, Token::u_word,
-                                            Token::v_word, Token::w_word, Token::p_word, Token::q_word,
-                                            Token::r_word, Token::a_word, Token::b_word}));
+    // Math expression parsing
+    parse_node *term();
+    parse_node *moreterms(parse_node *left);
+    parse_node *factor();
+    parse_node *morefactors(parse_node *left);
+    parse_node *func();
+    parse_node *morefuncs(parse_node *left);
+    parse_node *bottom();
 
     std::map<int,std::variant<int,double>> values;
-    std::shared_ptr<std::map<int,GCode>> gCodes;
-    std::shared_ptr<std::map<int,MCode>> mCodes;
-    std::shared_ptr<std::map<int,FixedCycleDefinition>> fixedCycleDefinition;
+    std::set<std::string> allowed_multiletter;
+    std::map<int,int> active_g_numbers;
+    std::map<int,int> active_m_numbers;
 
     std::unique_ptr<lexer> m_lexer;
     Controllers controller;
@@ -53,9 +60,7 @@ private:
 
     int next;
     std::map<int,std::variant<int,double>> variables;
-
-    parse_gcodes gcode_parser;
-    parse_mcodes mcode_parser;
+    int last_prepatory_word;
 
     std::vector<parse_node*> result;
 };

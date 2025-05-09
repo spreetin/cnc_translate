@@ -7,17 +7,9 @@ void traub_definition::updateData(std::shared_ptr<std::map<int, GCode> > gCodes,
 
 }
 
-MachineParameters traub_definition::getParameters()
+void traub_definition::updateParameters(MachineParameters *param)
 {
-    return updateParameters(MachineParameters());
-}
-
-MachineParameters traub_definition::updateParameters(MachineParameters param)
-{
-    param.comments.use_parenthesis = true;
-    param.L.is_variable = true;
-    param.O.is_prg_name = true;
-    return param;
+    param->comments.use_parenthesis = true;
 }
 
 };

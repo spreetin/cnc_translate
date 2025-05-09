@@ -13,13 +13,21 @@ add_executable(cnc_translate main.cpp
     brands/brands/traub/traubtx8h_definition.h brands/brands/traub/traubtx8h_definition.cpp
 
     tokens/iso6983.cpp tokens/iso6983.h
-    parser/parse_gcodes.h parser/parse_gcodes.cpp
+
     parser/parse_node.h parser/parse_node.cpp
 
-    parser/parse_mcodes.h parser/parse_mcodes.cpp
+
     brands/brands.h
     brands/machine_definitions.h
     brands/brands/traub/traub_definition.h brands/brands/traub/traub_definition.cpp
+    brands/parameters.h
+
+    brands/auto_geometry_function.h brands/auto_geometry_function.cpp
+    brands/brands/traub/traub_auto_geometry_functions.h brands/brands/traub/traub_auto_geometry_functions.cpp
+
+    brands/parameter_definitions.h
+    tokens/g_codes.h
+    tokens/m_codes.h
 )
 
 include(GNUInstallDirs)

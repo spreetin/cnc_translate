@@ -1,3 +1,4 @@
+#include <limits>
 #include "parse_node.h"
 
 namespace NCParser {
