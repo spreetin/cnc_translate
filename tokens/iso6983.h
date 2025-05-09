@@ -16,7 +16,7 @@ namespace NCParser {
 
 class ISO6983 {
 public:
-    static std::shared_ptr<std::map<int,GCode>> gCodes() {return std::shared_ptr<std::map<int,GCode>>(new std::map<int,GCode>({
+    /*static std::shared_ptr<std::map<int,GCode>> gCodes() {return std::shared_ptr<std::map<int,GCode>>(new std::map<int,GCode>({
        {0, GCode{"Rapid positioning", {}, GCodes::rapid_positioning, Duration::FRC_A}},
        {1, GCode{"Linear interpolation", {}, GCodes::linear_interpolation, Duration::FRC_A}},
        {2, GCode{"Circular interpolation arc clockwise", {}, GCodes::circular_interpolation_cw, Duration::FRC_A}},
@@ -105,7 +105,7 @@ public:
             {GCodes::fixed_cycle_89, {FixedCycleDefinition::FeedIn, FixedCycleDefinition::Yes,
                                                FixedCycleDefinition::None, FixedCycleDefinition::FeedOut, true}},
             }));
-    };
+    };*/
 };
 
 };
