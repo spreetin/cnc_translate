@@ -27,6 +27,7 @@ set(
     brands/parameter_definitions.h
     tokens/g_codes.h
     tokens/m_codes.h
+    errors/errors.h
 )
 
 add_library (

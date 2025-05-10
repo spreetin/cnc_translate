@@ -9,16 +9,12 @@ class LexerTest : public NCParser::lexer, public testing::Test{
 protected:
     int tokenizedReturn(int r) override {
         tokenized.push_back(r);
-        iValues.push_back(iValue);
-        dValues.push_back(fValue);
-        sValues.push_back(sValue);
+        values.push_back(vValue);
         return r;
     };
 
     std::vector<int> tokenized;
-    std::vector<int> iValues;
-    std::vector<double> dValues;
-    std::vector<std::string> sValues;
+    std::vector<std::variant<int,double,std::string>> values;
 };
 
 TEST_F(LexerTest, Init){
@@ -26,24 +22,24 @@ TEST_F(LexerTest, Init){
 }
 
 TEST_F(LexerTest, Words){
-    init("G100 M101", {});
-    EXPECT_EQ(next(), NCParser::Token::g_word);
-    EXPECT_EQ(intValue(), 100);
+    init("G100 M101");
+    EXPECT_EQ(next(), NCParser::Token::g_word) << text.at(m_pos);
+    EXPECT_EQ(int_value(), 100);
     EXPECT_EQ(next(), NCParser::Token::m_word);
-    EXPECT_EQ(intValue(), 101);
+    EXPECT_EQ(int_value(), 101);
     EXPECT_EQ(next(), NCParser::Token::done);
 }
 
 TEST_F(LexerTest, Numbers){
-    init("10.12 X100", {});
+    init("10.12 X100");
     EXPECT_EQ(next(), NCParser::Token::num_literal);
-    EXPECT_EQ(stringValue(), "10");
+    EXPECT_EQ(string_value(), "10");
     EXPECT_EQ(next(), NCParser::Token::period);
     EXPECT_EQ(next(), NCParser::Token::num_literal);
-    EXPECT_EQ(stringValue(), "12");
+    EXPECT_EQ(string_value(), "12");
     EXPECT_EQ(next(), NCParser::Token::x_word);
     EXPECT_EQ(next(), NCParser::Token::num_literal);
-    EXPECT_EQ(stringValue(), "100");
+    EXPECT_EQ(string_value(), "100");
     EXPECT_EQ(next(), NCParser::Token::done);
 }
 
@@ -51,12 +47,12 @@ TEST_F(LexerTest, Multiline){
     init("G100 EQ 100 NE FAIL", {"EQ", "NE"});
     next();
     EXPECT_EQ(next(), NCParser::Token::multi_letter);
-    EXPECT_EQ(stringValue(), "EQ");
+    EXPECT_EQ(string_value(), "EQ");
     next();
     EXPECT_EQ(next(), NCParser::Token::multi_letter);
-    EXPECT_EQ(stringValue(), "NE");
+    EXPECT_EQ(string_value(), "NE");
     EXPECT_EQ(next(), NCParser::Token::unknown_function);
-    EXPECT_EQ(stringValue(), "FAIL");
+    EXPECT_EQ(string_value(), "FAIL");
     EXPECT_EQ(next(), NCParser::Token::done);
 }
 
@@ -67,15 +63,21 @@ TEST_F(LexerTest, ShortProgram){
         Token::newline, Token::g_word, Token::x_word, Token::num_literal, Token::y_word,
         Token::num_literal, Token::period, Token::num_literal, Token::newline,
         Token::m_word, Token::newline, Token::percent, Token::done};
-    init(s, {});
+    init(s);
     while (next() != Token::done);
     EXPECT_EQ(v, tokenized);
-    EXPECT_EQ(iValues[2], 97);
-    EXPECT_EQ(iValues[5], 1);
-    EXPECT_EQ(sValues[7], "100");
-    EXPECT_EQ(sValues[9], "10");
-    EXPECT_EQ(sValues[11], "1");
-    EXPECT_EQ(iValues[13], 30);
+    ASSERT_EQ(values[2].index(), 0);
+    EXPECT_EQ(std::get<int>(values[2]), 97);
+    ASSERT_EQ(values[5].index(), 0);
+    EXPECT_EQ(std::get<int>(values[5]), 1);
+    ASSERT_EQ(values[7].index(), 2);
+    EXPECT_EQ(std::get<std::string>(values[7]), "100");
+    ASSERT_EQ(values[9].index(), 2);
+    EXPECT_EQ(std::get<std::string>(values[9]), "10");
+    ASSERT_EQ(values[11].index(), 2);
+    EXPECT_EQ(std::get<std::string>(values[11]), "1");
+    ASSERT_EQ(values[13].index(), 0);
+    EXPECT_EQ(std::get<int>(values[13]), 30);
 }
 
 #endif // LEXER_TEST_H

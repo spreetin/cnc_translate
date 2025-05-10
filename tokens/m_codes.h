@@ -31,7 +31,7 @@ struct MCodeDescription {
     std::string description;
 };
 
-std::map<int,std::string> mcode_descriptions = {
+static const std::map<int,std::string> mcode_descriptions = {
     {program_stop, {0}},
     {optional_stop, {1}},
     {end_of_program, {2}},

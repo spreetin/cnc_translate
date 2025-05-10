@@ -1,3 +1,5 @@
+set(CMAKE_POLICY_DEFAULT_CMP0135 NEW)
+
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -13,6 +15,7 @@ add_executable(
     cnc_testing
     parser_test.cpp
     lexer_test.cpp
+    test_helpers.h
 )
 target_link_libraries(
     cnc_testing

@@ -81,7 +81,7 @@ struct GCodeDescription {
     std::string description;
 };
 
-std::map<int,GCodeDescription> gcode_descriptions = {
+static const std::map<int,GCodeDescription> gcode_descriptions = {
     {rapid_positioning, {"Rapid positioning"}},
     {linear_interpolation, {"Linear interpolation"}},
     {circular_interpolation_cw, {"Circular interpolation arc clockwise"}},

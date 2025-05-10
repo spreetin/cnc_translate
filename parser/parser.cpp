@@ -38,6 +38,9 @@ void parser::init(Controllers controller, Manufacturers manufacturer, std::strin
             active_g_numbers[std::get<int>(item.second.word)] = item.first;
         }
     }
+    for (auto &item : param.m){
+        active_m_numbers[item.second.num] = item.first;
+    }
 }
 
 bool parser::parse(std::string text)
@@ -55,15 +58,27 @@ bool parser::parse(std::string text)
 void parser::match(int code)
 {
     if (next != code){
-        std::cout << "Faulty match: " << code << " on line " << m_lexer->line() << std::endl;
+        error err {error::Parsing, m_lexer->line(), m_lexer->pos(),
+                "Faulty match: \"" + std::to_string(code)};
+        errors.push_back(err);
+        std::cerr << err.to_string() << std::endl;
     }
-    if (next != Token::done)
+    if (next != Token::done){
         next = m_lexer->next();
+        if (next == Token::error || next == Token::unknown_function || next == Token::unknown_code){
+            errors.push_back(m_lexer->last_error());
+            std::cerr << m_lexer->last_error().to_string() << std::endl;
+        }
+    }
 }
 
 void parser::start()
 {
     next = m_lexer->next();
+    if (next == Token::error || next == Token::unknown_function || next == Token::unknown_code){
+        errors.push_back(m_lexer->last_error());
+        std::cerr << m_lexer->last_error().to_string() << std::endl;
+    }
     if (next == Token::percent)
         match(Token::percent);
     result = list();
@@ -90,19 +105,19 @@ parse_node *parser::block()
      */
     auto rowItem = new parse_node(Token::block);
     if (next == Token::n_word){
-        int blockNum = m_lexer->intValue();
+        int blockNum = m_lexer->int_value();
         match(Token::n_word);
         rowItem->appendChild(new parse_node(Token::n_word, blockNum));
     }
     if (next == Token::multi_letter){
         // Such as WHILE-loops
-        std::string ml = m_lexer->stringValue();
+        std::string ml = m_lexer->string_value();
         if (param.functions.block.contains(ml)){
             auto block_definition = param.functions.block.at(ml);
             std::vector<parse_node*> blocks;
             match(Token::multi_letter);
             while (true){
-                if (next == Token::multi_letter && block_definition.end_token == m_lexer->stringValue()){
+                if (next == Token::multi_letter && block_definition.end_token == m_lexer->string_value()){
                     match(Token::multi_letter);
                     break;
                 }
@@ -118,11 +133,18 @@ parse_node *parser::block()
             rowItem->appendChild(n);
         }
     }
-    while (next == Token::g_word){
-        rowItem->appendChildren(g());
+    if (next == Token::g_word){
+        while (next == Token::g_word){
+            rowItem->appendChildren(g());
+        }
+    } else {
+        int type = active_g_numbers[last_prepatory_word];
+        if (param.g[type].parameters.contains(next)){
+            rowItem->appendChildren(g(true));
+        }
     }
     while (next == Token::m_word){
-        int code = m_lexer->intValue();
+        int code = m_lexer->int_value();
         match(Token::m_word);
         if (active_m_numbers.contains(code)){
             rowItem->appendChild(new parse_node(Token::m_word, active_m_numbers.at(code)));
@@ -132,42 +154,27 @@ parse_node *parser::block()
         || param.comments.use_semicolon && next == Token::semicolon){
         rowItem->appendChild(comment());
     }
-    if (next != Token::newline){
+    if (next == Token::newline){
+        match(Token::newline);
+    } else if (next != Token::done){
         /*
          * These are pieces of data in the block that shouldn't be there.
          * We will not parse them, but will preserve them as a data node, for debugging purposes.
          * It is also possible that valid data ends up here, if the order of operations is wrong.
          * I.e. M-codes are written before G-codes.
          */
-        next = m_lexer->finishLine();
-        rowItem->appendChild(new parse_node(Token::left_over_data, m_lexer->stringValue()));
+        next = m_lexer->finish_line();
+        if (next == Token::error || next == Token::unknown_function || next == Token::unknown_code){
+            errors.push_back(m_lexer->last_error());
+            std::cerr << m_lexer->last_error().to_string() << std::endl;
+        }
+        rowItem->appendChild(new parse_node(Token::left_over_data, m_lexer->string_value()));
     }
-    match(Token::newline);
     return rowItem;
 }
 
 parse_node *parser::expr()
 {
-    /*parse_node * left = nullptr;
-    if (next == Token::multi_letter){
-        std::string t = m_lexer->stringValue();
-        if (allowed_multiletter.contains(t)){
-            if (param.functions.unary.contains(t)){
-                left = new parse_node(Token::unary_function, param.functions.unary[t], {expr()});
-            } else if (param.functions.binary.contains(t)){
-                left = new parse_node(Token::binary_functions, param.functions.binary[t], {expr()});
-            } else {
-                left = new parse_node(Token::unknown_function);
-            }
-        }
-    } else if (next == Token::leftsquare){
-        match(Token::leftsquare);
-        left = expr();
-        match(Token::rightsquare);
-    } else if (next == Token::num_literal){
-
-    }
-    return left;*/
     auto p = term();
     return moreterms(p);
 }
@@ -176,6 +183,7 @@ parse_node *parser::assignment()
 {
     auto var = variable();
     if (next == Token::equals){
+        match(Token::equals);
         return new parse_node(Token::equals, std::vector<parse_node*>{var, expr()});
     }
     return var;
@@ -186,7 +194,8 @@ parse_node *parser::variable()
     match(next);
     if (next != Token::num_literal)
         return new parse_node(Token::variable, -1);
-    int val = m_lexer->intValue();
+    int val = m_lexer->int_value();
+    match(Token::num_literal);
     return new parse_node(Token::variable, val);
 }
 
@@ -196,27 +205,48 @@ parse_node *parser::number()
      * TODO: We need to handle other ways of writing numbers that are valid, i.e. floating point
      *       numbers defined with fixed period position. These will just be parsed as int right now.
      */
-    std::string first_part = m_lexer->stringValue();
+    std::string first_part = m_lexer->string_value();
     match(Token::num_literal);
     if (next == Token::period){
         match(Token::period);
         if (next != Token::num_literal)
             return new parse_node(Token::num_int, std::stoi(first_part));
-        std::string second_part = m_lexer->stringValue();
+        std::string second_part = m_lexer->string_value();
         match(Token::num_literal);
         double value = stod(first_part + '.' + second_part);
         return new parse_node(Token::num_float, value);
     } else {
-        return new parse_node(Token::num_int, std::stoi(first_part));
+        try {
+            return new parse_node(Token::num_int, std::stoi(first_part));
+        } catch (std::invalid_argument){
+            error err {error::Parsing, m_lexer->line(), m_lexer->pos(),
+                      "Number parse error on string: \"" + first_part + "\""};
+            errors.push_back(err);
+            std::cerr << err.to_string() << std::endl;
+        } catch (std::out_of_range){
+            error err {error::Parsing, m_lexer->line(), m_lexer->pos(),
+                      "Number parse error on string: \"" + first_part + "\""};
+            errors.push_back(err);
+            std::cerr << err.to_string() << std::endl;
+        }
+        return nullptr;
     }
 }
 
-std::vector<parse_node*> parser::g()
+std::vector<parse_node*> parser::g(bool continuingWord)
 {
-    int code = m_lexer->intValue();
-    match(Token::g_word);
+    int code;
+    if (!continuingWord){
+        code = m_lexer->int_value();
+        match(Token::g_word);
+    } else {
+        code = last_prepatory_word;
+    }
     std::vector<parse_node*> nodes;
     if (active_g_numbers.contains(code)){
+        if (code < 5 && !continuingWord){
+            last_prepatory_word = code;
+        }
         int g_type = active_g_numbers.at(code);
         auto def = param.g[g_type];
         nodes.push_back(new parse_node(Token::g_word, g_type));
@@ -241,12 +271,16 @@ std::vector<parse_node*> parser::g()
 parse_node *parser::comment()
 {
     char init_char = next;
-    char end_char = '\n';
+    char end_char = ')';
     if (init_char == '(')
         end_char = ')';
-    next = m_lexer->finishComment(end_char);
-    std::string comment_text = m_lexer->stringValue();
-    if (next != Token::newline)
+    next = m_lexer->finish_comment(end_char);
+    if (next == Token::error || next == Token::unknown_function || next == Token::unknown_code){
+        errors.push_back(m_lexer->last_error());
+        std::cerr << m_lexer->last_error().to_string() << std::endl;
+    }
+    std::string comment_text = m_lexer->string_value();
+    if (next == end_char)
         match(next);
     return new parse_node(Token::comment, comment_text);
 }
@@ -260,10 +294,10 @@ parse_node *parser::term()
 parse_node *parser::moreterms(parse_node *left)
 {
     static std::set<int> ops = {Token::plus, Token::minus};
-    int op = next;
-    if (ops.contains(op)){
+    if (ops.contains(next)){
+        int op = next;
         match(op);
-        auto p = new parse_node(op, std::vector<parse_node*>{left, factor()});
+        auto p = new parse_node(op, std::vector<parse_node*>{left, term()});
         return moreterms(p);
     } else {
         return left;
@@ -279,10 +313,10 @@ parse_node *parser::factor()
 parse_node *parser::morefactors(parse_node *left)
 {
     static std::set<int> ops = {Token::star, Token::slash};
-    int op = next;
-    if (ops.contains(op)){
+    if (ops.contains(next)){
+        int op = next;
         match(op);
-        auto p = new parse_node(op, std::vector<parse_node*>{left, func()});
+        auto p = new parse_node(op, std::vector<parse_node*>{left, factor()});
         return morefactors(p);
     } else {
         return left;
@@ -291,40 +325,40 @@ parse_node *parser::morefactors(parse_node *left)
 
 parse_node *parser::func()
 {
-    auto *p = bottom();
-    return morefuncs(p);
+    if (next == Token::num_literal){
+        return morefuncs(number());
+    } else if (next == Token::leftsquare){
+        match(Token::leftsquare);
+        auto p = expr();
+        match(Token::rightsquare);
+        return morefuncs(p);
+    } else if (next == Token::multi_letter){
+        std::string t = m_lexer->string_value();
+        if (param.functions.unary.contains(t)){
+            match(Token::multi_letter);
+            return morefuncs(new parse_node(Token::unary_function, param.functions.unary[t], {expr()}));
+        }
+    } else if (param.variables.variable_marker.contains(next)){
+        return morefuncs(variable());
+    }
+    error err {error::Parsing, m_lexer->line(), m_lexer->pos(),
+              "Expression non-parseable. Token: " + std::to_string(next) + " Variable: "
+                  + m_lexer->string_value()};
+    errors.push_back(err);
+    std::cerr << err.to_string() << std::endl;
+    return nullptr;
 }
 
 parse_node *parser::morefuncs(parse_node *left)
 {
     if (next == Token::multi_letter){
-        std::string t = m_lexer->stringValue();
+        std::string t = m_lexer->string_value();
         if (param.functions.binary.contains(t)){
-            return new parse_node(param.functions.binary[t], std::vector<parse_node*>{left, expr()});
+            match(Token::multi_letter);
+            return new parse_node(Token::binary_functions, param.functions.binary[t], {left, expr()});
         }
     }
     return left;
-}
-
-parse_node *parser::bottom()
-{
-    if (next == Token::num_literal){
-        return number();
-    } else if (next == Token::leftsquare){
-        match(Token::leftsquare);
-        auto p = expr();
-        match(Token::rightsquare);
-        return p;
-    } else if (next == Token::multi_letter){
-        std::string t = m_lexer->stringValue();
-        if (param.functions.unary.contains(t)){
-            match(Token::multi_letter);
-            return new parse_node(Token::unary_function, param.functions.unary[t], {expr()});
-        }
-    } else if (param.variables.variable_marker.contains(next)){
-        return variable();
-    }
-    return nullptr;
 }
 
 };

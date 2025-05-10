@@ -10,6 +10,7 @@
 #include "parse_node.h"
 #include "../brands/parameters.h"
 #include "../brands/brands.h"
+#include "../errors/errors.h"
 
 namespace NCParser {
 
@@ -23,7 +24,7 @@ public:
     friend class parse_gcodes;
     friend class parse_mcodes;
 
-private:
+protected:
     void init(Controllers controller, Manufacturers manufacturer, std::string machine);
 
     void match(int code);
@@ -35,7 +36,7 @@ private:
     parse_node *assignment();
     parse_node *variable();
     parse_node *number();
-    std::vector<parse_node *> g();
+    std::vector<parse_node *> g(bool continuingWord = false);
     parse_node *comment();
 
     // Math expression parsing
@@ -45,7 +46,6 @@ private:
     parse_node *morefactors(parse_node *left);
     parse_node *func();
     parse_node *morefuncs(parse_node *left);
-    parse_node *bottom();
 
     std::map<int,std::variant<int,double>> values;
     std::set<std::string> allowed_multiletter;
@@ -60,7 +60,8 @@ private:
 
     int next;
     std::map<int,std::variant<int,double>> variables;
-    int last_prepatory_word;
+    int last_prepatory_word = -1;
+    std::vector<error> errors;
 
     std::vector<parse_node*> result;
 };

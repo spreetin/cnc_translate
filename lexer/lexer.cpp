@@ -1,7 +1,9 @@
 #include <cctype>
-#include <iostream>
+#include <cmath>
+#include <stdexcept>
 #include <string>
 #include <set>
+#include <algorithm>
 #include "lexer.h"
 #include "../tokens/tokens.h"
 
@@ -20,66 +22,29 @@ void lexer::init(std::string text, std::set<std::string> allowed_multiletters)
 {
     this->text = text;
     multiletter = allowed_multiletters;
-    pos = 0;
+    m_pos = 0;
     m_line = 0;
 }
 
 int lexer::next()
 {
-    // Helper to peek forward
-    static auto peek = [this](bool single = false) -> char {
-        if (single){
-            return text.at(pos);
-        }
-        int p = pos;
-        while (text.length() > p){
-            if (text.at(p) == ' ' || text.at(p) == '\t'){
-                p++;
-            } else {
-                return text.at(p);
-            }
-        }
-        return EOF;
-    };
-
-    // Grab the next group of numeric characters
-    static auto grabInt = [&](int offset = 0) -> std::string {
-        while (pos < text.size() && (text.at(pos) == ' ' || text.at(pos) == '\t'))
-            pos++;
-        int start = pos+offset;
-        while (pos < text.size() && std::isdigit(text.at(pos))){
-            pos++;
-        }
-        return text.substr(start, pos-start);
-    };
-
-    // Parse what G- or M-code we have
-    static auto getCode = [&](int token) -> int {
-        if (!std::isdigit(peek())){
-            return Token::unknown_code;
-        }
-        std::string num = grabInt();
-        //std::cout << num;
-        iValue = std::stoi(num);
-        return token;
-    };
-
     while (true){
-        if (text.length() <= pos){
+        if (text.length() <= m_pos){
             return RETURN(Token::done);
         }
-        char next = std::toupper(text.at(pos));
-        pos++;
-        if (std::isalpha(next) && pos < text.size() && std::isalpha(text.at(pos))){
-            int start = pos-1;
-            while (pos < text.size() && std::isalpha(text.at(pos))){
-                pos++;
+        char next = std::toupper(text.at(m_pos));
+        m_pos++;
+        if (std::isalpha(next) && m_pos < text.size() && std::isalpha(text.at(m_pos))){
+            int start = m_pos-1;
+            while (m_pos < text.size() && std::isalpha(text.at(m_pos))){
+                m_pos++;
             }
-            std::string ml = text.substr(start, pos-start);
-            sValue = ml;
+            std::string ml = text.substr(start, m_pos-start);
+            vValue = ml;
             if (multiletter.contains(ml)){
                 return RETURN(Token::multi_letter);
             } else {
+                m_last_error = {error::Lexing, m_line, pos(), "Function not defined: \"" + ml +"\""};
                 return RETURN(Token::unknown_function);
             }
         } else {
@@ -96,14 +61,14 @@ int lexer::next()
             {
                 if (!std::isdigit(peek()))
                     continue;
-                iValue = std::stoi(grabInt());
+                int val = std::stoi(grabInt());
+                vValue = val;
                 return RETURN(Token::n_word);
             }
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
             {
-                sValue = grabInt(-1);
-                iValue = std::stoi(sValue);
+                vValue = grabInt(-1);
                 return RETURN(Token::num_literal);
             }
             case '\n':
@@ -114,29 +79,121 @@ int lexer::next()
             }
         }
     }
+    m_last_error = {error::Lexing, m_line, pos(), "Undefined token encountered on \""
+                                                      + text.substr(pos(), text.find('\n', m_pos))};
     return Token::error;
 }
 
-int lexer::finishLine()
+int lexer::finish_line()
 {
-    int start = pos;
-    while (text.at(pos) != '\n'){
-        pos++;
+    int start = m_pos;
+    while (m_pos < text.size() && text.at(m_pos) != '\n'){
+        m_pos++;
     }
-    sValue = text.substr(start, pos-start);
-    return Token::newline;
+    vValue = text.substr(start, m_pos-start);
+    return next();
 }
 
-int lexer::finishComment(char end)
+int lexer::finish_comment(char end)
 {
-    int start = pos;
-    while (text.at(pos) != '\n' && text.at(pos) != end){
-        pos++;
+    int start = m_pos;
+    while (m_pos < text.size() && text.at(m_pos) != '\n' && text.at(m_pos) != end){
+        m_pos++;
     }
-    sValue = text.substr(start, pos-start);
-    int result = text.at(pos);
-    pos++;
-    return result;
+    vValue = text.substr(start, m_pos-start);
+    return next();
+}
+
+int lexer::int_value()
+{
+    switch (vValue.index()){
+    case 0:
+        return std::get<int>(vValue);
+    case 1:
+        return std::floor(std::get<double>(vValue));
+    case 2:
+        return std::stoi(std::get<std::string>(vValue));
+    }
+    return -1;
+}
+
+double lexer::double_value()
+{
+    switch (vValue.index()){
+    case 0:
+        return std::get<int>(vValue);
+    case 1:
+        return std::get<double>(vValue);
+    case 2:
+        return std::stod(std::get<std::string>(vValue));
+    }
+    return -1;
+}
+
+std::string lexer::string_value()
+{
+    switch (vValue.index()){
+    case 0:
+        return std::to_string(std::get<int>(vValue));
+    case 1:
+        return std::to_string(std::get<double>(vValue));
+    case 2:
+        return std::get<std::string>(vValue);
+    }
+    return "";
+}
+
+char lexer::peek(bool single)
+{
+    if (single){
+        if (text.length() > m_pos){
+            return text.at(m_pos);
+        } else {
+            return '\0';
+        }
+    }
+    int p = m_pos;
+    while (text.length() > p){
+        if (text.at(p) == ' ' || text.at(p) == '\t'){
+            p++;
+        } else {
+            return text.at(p);
+        }
+    }
+    return EOF;
+}
+
+std::string lexer::grabInt(int offset)
+{
+    int start = m_pos+offset;
+    while (m_pos < text.size() && std::isdigit(peek())){
+        m_pos++;
+    }
+    std::string r = text.substr(start, m_pos-start);
+    r.erase(std::remove_if(r.begin(), r.end(), [](const char &c){
+                return c==' ' || c=='\t';}), r.end());
+    return r;
+}
+
+int lexer::getCode(int token)
+{
+    std::string num;
+    try {
+        if (!std::isdigit(peek())){
+            m_last_error = {error::Lexing, m_line, pos(), "Can't extract code name on \""
+                                                              + text.substr(pos(), text.find('\n', m_pos))};
+            return Token::unknown_code;
+        }
+        num = grabInt();
+        //std::cout << num;
+        vValue = std::stoi(num);
+        return token;
+    } catch (std::invalid_argument) {
+        vValue = num;
+        m_last_error = {error::Lexing, m_line, pos(), "Code name illegal on \""
+                                                          + text.substr(pos(), text.find('\n', m_pos))};
+        return Token::unknown_code;
+    }
 }
 
 };
