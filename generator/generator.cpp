@@ -16,7 +16,7 @@ generator::generator(Manufacturers manufacturer, std::string machine) {
     }
 }
 
-std::string generator::generate(std::vector<parse_node*> root)
+std::string generator::generate(std::vector<std::shared_ptr<parse_node>> root)
 {
     std::stringstream ss;
     ss << "%\n";

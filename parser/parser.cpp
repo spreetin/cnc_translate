@@ -84,9 +84,9 @@ void parser::start()
     m_result = list();
 }
 
-std::vector<parse_node*> parser::list()
+std::vector<std::shared_ptr<parse_node>> parser::list()
 {
-    std::vector<parse_node*> blocks;
+    std::vector<std::shared_ptr<parse_node>> blocks;
     while (next != Token::done){
         auto b = block();
         if (b)
@@ -95,7 +95,7 @@ std::vector<parse_node*> parser::list()
     return blocks;
 }
 
-parse_node *parser::block()
+std::shared_ptr<parse_node>parser::block()
 {
     /*
      * Order defined in standard as N -> G -> dimensions -> I/J/K -> feed function -> spindle speed -> T -> M
@@ -103,18 +103,18 @@ parse_node *parser::block()
      * N -> G -> parameters -> M
      * The order of parameters are accepted even when they would be wrong according to the standard.
      */
-    auto rowItem = new parse_node(Token::block);
+    auto rowItem = std::shared_ptr<parse_node>{new parse_node(Token::block)};
     if (next == Token::n_word){
         int blockNum = m_lexer->int_value();
         match(Token::n_word);
-        rowItem->appendChild(new parse_node(Token::n_word, blockNum));
+        rowItem->appendChild(std::shared_ptr<parse_node>{new parse_node(Token::n_word, blockNum)});
     }
     if (next == Token::multi_letter){
         // Such as WHILE-loops
         std::string ml = m_lexer->string_value();
         if (param.functions.block.contains(ml)){
             auto block_definition = param.functions.block.at(ml);
-            std::vector<parse_node*> blocks;
+            std::vector<std::shared_ptr<parse_node>> blocks;
             match(Token::multi_letter);
             while (true){
                 if (next == Token::multi_letter && block_definition.end_token == m_lexer->string_value()){
@@ -123,7 +123,8 @@ parse_node *parser::block()
                 }
                 blocks.push_back(block());
             }
-            rowItem->appendChild(new parse_node(Token::block_function, block_definition.type, blocks));
+            rowItem->appendChild(std::shared_ptr<parse_node>{new parse_node(Token::block_function,
+                                                                            block_definition.type, blocks)});
         } else {
             match(Token::multi_letter);
         }
@@ -147,7 +148,7 @@ parse_node *parser::block()
         int code = m_lexer->int_value();
         match(Token::m_word);
         if (active_m_numbers.contains(code)){
-            rowItem->appendChild(new parse_node(Token::m_word, active_m_numbers.at(code)));
+            rowItem->appendChild(std::shared_ptr<parse_node>{new parse_node(Token::m_word, active_m_numbers.at(code))});
         }
     }
     if (param.comments.use_parenthesis && next == Token::leftparen
@@ -168,38 +169,38 @@ parse_node *parser::block()
             errors.push_back(m_lexer->last_error());
             std::cerr << m_lexer->last_error().to_string() << std::endl;
         }
-        rowItem->appendChild(new parse_node(Token::left_over_data, m_lexer->string_value()));
+        rowItem->appendChild(std::shared_ptr<parse_node>{new parse_node(Token::left_over_data, m_lexer->string_value())});
     }
     return rowItem;
 }
 
-parse_node *parser::expr()
+std::shared_ptr<parse_node>parser::expr()
 {
     auto p = term();
     return moreterms(p);
 }
 
-parse_node *parser::assignment()
+std::shared_ptr<parse_node>parser::assignment()
 {
     auto var = variable();
     if (next == Token::equals){
         match(Token::equals);
-        return new parse_node(Token::equals, std::vector<parse_node*>{var, expr()});
+        return std::shared_ptr<parse_node>{new parse_node(Token::equals, std::vector<std::shared_ptr<parse_node>>{var, expr()})};
     }
     return var;
 }
 
-parse_node *parser::variable()
+std::shared_ptr<parse_node>parser::variable()
 {
     match(next);
     if (next != Token::num_literal)
-        return new parse_node(Token::variable, -1);
+        return std::shared_ptr<parse_node>{new parse_node(Token::variable, -1)};
     int val = m_lexer->int_value();
     match(Token::num_literal);
-    return new parse_node(Token::variable, val);
+    return std::shared_ptr<parse_node>{new parse_node(Token::variable, val)};
 }
 
-parse_node *parser::number()
+std::shared_ptr<parse_node>parser::number()
 {
     /*
      * TODO: We need to handle other ways of writing numbers that are valid, i.e. floating point
@@ -210,14 +211,14 @@ parse_node *parser::number()
     if (next == Token::period){
         match(Token::period);
         if (next != Token::num_literal)
-            return new parse_node(Token::num_int, std::stoi(first_part));
+            return std::shared_ptr<parse_node>{new parse_node(Token::num_int, std::stoi(first_part))};
         std::string second_part = m_lexer->string_value();
         match(Token::num_literal);
         double value = stod(first_part + '.' + second_part);
-        return new parse_node(Token::num_float, value);
+        return std::shared_ptr<parse_node>{new parse_node(Token::num_float, value)};
     } else {
         try {
-            return new parse_node(Token::num_int, std::stoi(first_part));
+            return std::shared_ptr<parse_node>{new parse_node(Token::num_int, std::stoi(first_part))};
         } catch (std::invalid_argument){
             error err {error::Parsing, m_lexer->line(), m_lexer->pos(),
                       "Number parse error on string: \"" + first_part + "\""};
@@ -233,7 +234,7 @@ parse_node *parser::number()
     }
 }
 
-std::vector<parse_node*> parser::g(bool continuingWord)
+std::vector<std::shared_ptr<parse_node>> parser::g(bool continuingWord)
 {
     int code;
     if (!continuingWord){
@@ -242,14 +243,14 @@ std::vector<parse_node*> parser::g(bool continuingWord)
     } else {
         code = last_prepatory_word;
     }
-    std::vector<parse_node*> nodes;
+    std::vector<std::shared_ptr<parse_node>> nodes;
     if (active_g_numbers.contains(code)){
         if (code < 5 && !continuingWord){
             last_prepatory_word = code;
         }
         int g_type = active_g_numbers.at(code);
         auto def = param.g[g_type];
-        nodes.push_back(new parse_node(Token::g_word, g_type));
+        nodes.push_back(std::shared_ptr<parse_node>{new parse_node(Token::g_word, g_type)});
         while (def.parameters.contains(next)){
             int param_type;
             std::vector<int> sub_types;
@@ -265,26 +266,26 @@ std::vector<parse_node*> parser::g(bool continuingWord)
             }
             match(next);
             // TODO Handle extended parameters (i.e. X1=100)
-            parse_node * e = grabParameterData(sub_types);
-            nodes.push_back(new parse_node(Token::parameter, param_type, {e}));
+            std::shared_ptr<parse_node> e = grabParameterData(sub_types);
+            nodes.push_back(std::shared_ptr<parse_node>{new parse_node(Token::parameter, param_type, {e})});
         }
     }
     return nodes;
 }
 
-parse_node *parser::grabParameterData(std::vector<int> sub_types)
+std::shared_ptr<parse_node>parser::grabParameterData(std::vector<int> sub_types)
 {
-    parse_node * l = expr();
+    std::shared_ptr<parse_node> l = expr();
     if (sub_types.size() > 1 && next == Token::equals){
         match(Token::equals);
-        parse_node * r = expr();
-        return new parse_node(Token::equals, std::vector<parse_node*>{l, r});
+        std::shared_ptr<parse_node> r = expr();
+        return std::shared_ptr<parse_node>{new parse_node(Token::equals, std::vector<std::shared_ptr<parse_node>>{l, r})};
     } else {
         return l;
     }
 }
 
-parse_node *parser::comment()
+std::shared_ptr<parse_node>parser::comment()
 {
     char init_char = next;
     char end_char = ')';
@@ -298,48 +299,48 @@ parse_node *parser::comment()
     std::string comment_text = m_lexer->string_value();
     if (next == end_char)
         match(next);
-    return new parse_node(Token::comment, comment_text);
+    return std::shared_ptr<parse_node>{new parse_node(Token::comment, comment_text)};
 }
 
-parse_node *parser::term()
+std::shared_ptr<parse_node>parser::term()
 {
-    auto *p = factor();
+    auto p = factor();
     return morefactors(p);
 }
 
-parse_node *parser::moreterms(parse_node *left)
+std::shared_ptr<parse_node>parser::moreterms(std::shared_ptr<parse_node> left)
 {
     static std::set<int> ops = {Token::plus, Token::minus};
     if (ops.contains(next)){
         int op = next;
         match(op);
-        auto p = new parse_node(op, std::vector<parse_node*>{left, term()});
+        auto p = std::shared_ptr<parse_node>{new parse_node(op, std::vector<std::shared_ptr<parse_node>>{left, term()})};
         return moreterms(p);
     } else {
         return left;
     }
 }
 
-parse_node *parser::factor()
+std::shared_ptr<parse_node>parser::factor()
 {
-    auto *p = func();
+    auto p = func();
     return morefuncs(p);
 }
 
-parse_node *parser::morefactors(parse_node *left)
+std::shared_ptr<parse_node>parser::morefactors(std::shared_ptr<parse_node>left)
 {
     static std::set<int> ops = {Token::star, Token::slash};
     if (ops.contains(next)){
         int op = next;
         match(op);
-        auto p = new parse_node(op, std::vector<parse_node*>{left, factor()});
+        auto p = std::shared_ptr<parse_node>{new parse_node(op, std::vector<std::shared_ptr<parse_node>>{left, factor()})};
         return morefactors(p);
     } else {
         return left;
     }
 }
 
-parse_node *parser::func()
+std::shared_ptr<parse_node>parser::func()
 {
     if (next == Token::num_literal){
         return morefuncs(number());
@@ -352,7 +353,7 @@ parse_node *parser::func()
         std::string t = m_lexer->string_value();
         if (param.functions.unary.contains(t)){
             match(Token::multi_letter);
-            return morefuncs(new parse_node(Token::unary_function, param.functions.unary[t], {expr()}));
+            return morefuncs(std::shared_ptr<parse_node>{new parse_node(Token::unary_function, param.functions.unary[t], {expr()})});
         }
     } else if (param.variables.variable_marker.contains(next)){
         return morefuncs(variable());
@@ -365,13 +366,13 @@ parse_node *parser::func()
     return nullptr;
 }
 
-parse_node *parser::morefuncs(parse_node *left)
+std::shared_ptr<parse_node>parser::morefuncs(std::shared_ptr<parse_node>left)
 {
     if (next == Token::multi_letter){
         std::string t = m_lexer->string_value();
         if (param.functions.binary.contains(t)){
             match(Token::multi_letter);
-            return new parse_node(Token::binary_functions, param.functions.binary[t], {left, expr()});
+            return std::shared_ptr<parse_node>{new parse_node(Token::binary_functions, param.functions.binary[t], {left, expr()})};
         }
     }
     return left;

@@ -15,6 +15,6 @@ protected:
 };
 
 TEST_F(ParseNodeGen, number){
-    parse_node * n = new parse_node(Token::num_int, 123);
+    auto n = std::shared_ptr<parse_node>{new parse_node(Token::num_int, 123)};
     EXPECT_EQ(parse_node_gen::generate(n, &param), "123");
 }

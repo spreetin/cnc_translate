@@ -21,7 +21,7 @@ public:
 
     bool parse(std::string text);
 
-    std::vector<parse_node*> result(){
+    std::vector<std::shared_ptr<parse_node>> result(){
         return m_result;
     }
 
@@ -31,23 +31,23 @@ protected:
     void match(int code);
 
     void start();
-    std::vector<parse_node *> list();
-    parse_node *block();
-    parse_node *expr();
-    parse_node *assignment();
-    parse_node *variable();
-    parse_node *number();
-    std::vector<parse_node *> g(bool continuingWord = false);
-    parse_node *grabParameterData(std::vector<int> sub_types);
-    parse_node *comment();
+    std::vector<std::shared_ptr<parse_node>> list();
+    std::shared_ptr<parse_node>block();
+    std::shared_ptr<parse_node>expr();
+    std::shared_ptr<parse_node>assignment();
+    std::shared_ptr<parse_node>variable();
+    std::shared_ptr<parse_node>number();
+    std::vector<std::shared_ptr<parse_node>> g(bool continuingWord = false);
+    std::shared_ptr<parse_node>grabParameterData(std::vector<int> sub_types);
+    std::shared_ptr<parse_node>comment();
 
     // Math expression parsing
-    parse_node *term();
-    parse_node *moreterms(parse_node *left);
-    parse_node *factor();
-    parse_node *morefactors(parse_node *left);
-    parse_node *func();
-    parse_node *morefuncs(parse_node *left);
+    std::shared_ptr<parse_node>term();
+    std::shared_ptr<parse_node>moreterms(std::shared_ptr<parse_node>left);
+    std::shared_ptr<parse_node>factor();
+    std::shared_ptr<parse_node>morefactors(std::shared_ptr<parse_node>left);
+    std::shared_ptr<parse_node>func();
+    std::shared_ptr<parse_node>morefuncs(std::shared_ptr<parse_node>left);
 
     std::map<int,std::variant<int,double>> values;
     std::set<std::string> allowed_multiletter;
@@ -64,7 +64,7 @@ protected:
     int last_prepatory_word = -1;
     std::vector<error> errors;
 
-    std::vector<parse_node*> m_result;
+    std::vector<std::shared_ptr<parse_node>> m_result;
 };
 
 };

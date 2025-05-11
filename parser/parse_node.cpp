@@ -4,13 +4,6 @@
 
 namespace NCParser {
 
-parse_node::~parse_node()
-{
-    for (auto c : m_children){
-        delete c;
-    }
-}
-
 int parse_node::intValue(){
     try {
         return std::get<int>(m_value);

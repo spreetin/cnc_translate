@@ -14,7 +14,7 @@ class auto_geometry_function
 public:
     auto_geometry_function();
 
-    virtual std::vector<parse_node*> process(std::map<char,std::variant<int,double,std::string>> parameters) = 0;
+    virtual std::vector<std::shared_ptr<parse_node>> process(std::map<char,std::variant<int,double,std::string>> parameters) = 0;
 };
 
 };

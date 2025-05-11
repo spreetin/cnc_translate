@@ -8,7 +8,7 @@
 
 namespace NCParser {
 
-std::string NCParser::parse_node_gen::generate(parse_node *block, MachineParameters *param)
+std::string NCParser::parse_node_gen::generate(std::shared_ptr<parse_node>block, MachineParameters *param)
 {
     if (!block->childCount()){
         return expr(block, param);
@@ -119,7 +119,7 @@ std::string NCParser::parse_node_gen::generate(parse_node *block, MachineParamet
     return ss.str();
 }
 
-std::string NCParser::parse_node_gen::expr(parse_node *n, MachineParameters *param)
+std::string NCParser::parse_node_gen::expr(std::shared_ptr<parse_node>n, MachineParameters *param)
 {
     static auto get_func = [](int v, std::map<std::string,int> * m) -> std::string{
         for (auto i : *m){

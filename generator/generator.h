@@ -14,10 +14,10 @@ class generator
 public:
     generator(Manufacturers manufacturer, std::string machine);
 
-    std::string generate(std::vector<parse_node*> root);
+    std::string generate(std::vector<std::shared_ptr<parse_node>> root);
 
 protected:
-    std::string expr(parse_node *node);
+    std::string expr(std::shared_ptr<parse_node>node);
 
     MachineParameters param;
     Manufacturers manufacturer;

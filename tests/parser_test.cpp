@@ -20,7 +20,7 @@ TEST_F(ParserBasic, init){
 }
 
 TEST_F(ParserBasic, morefuncs){
-    auto p1 = new parse_node(Token::num_int);
+    auto p1 = std::shared_ptr<parse_node>{new parse_node(Token::num_int)};
     m_lexer->init("EQ 2", allowed_multiletter);
     next = m_lexer->next();
     auto p2 = morefuncs(p1);
@@ -30,7 +30,6 @@ TEST_F(ParserBasic, morefuncs){
     EXPECT_EQ(p2->intValue(), f_comparison_equal);
     EXPECT_EQ(p2->childCount(), 2);
     EXPECT_EQ(p2->getChild(1)->intValue(), 2);
-    delete p2;
 }
 
 TEST_F(ParserBasic, func_number){
@@ -41,7 +40,6 @@ TEST_F(ParserBasic, func_number){
     ASSERT_TRUE(p);
     EXPECT_EQ(p->type(), Token::num_int);
     EXPECT_EQ(p->intValue(), 100);
-    delete p;
 }
 
 TEST_F(ParserBasic, func_parenthesis){
@@ -52,7 +50,6 @@ TEST_F(ParserBasic, func_parenthesis){
     ASSERT_TRUE(p);
     EXPECT_EQ(p->type(), Token::num_int);
     EXPECT_EQ(p->intValue(), 100);
-    delete p;
 }
 
 TEST_F(ParserBasic, func_unary){
@@ -66,7 +63,6 @@ TEST_F(ParserBasic, func_unary){
     EXPECT_EQ(p->childCount(), 1);
     EXPECT_EQ(p->getChild(0)->type(), Token::num_int);
     EXPECT_EQ(p->getChild(0)->intValue(), 10);
-    delete p;
 }
 
 TEST_F(ParserBasic, func_variable){
@@ -77,11 +73,10 @@ TEST_F(ParserBasic, func_variable){
     ASSERT_TRUE(p);
     EXPECT_EQ(p->type(), Token::variable);
     EXPECT_EQ(p->intValue(), 102);
-    delete p;
 }
 
 TEST_F(ParserBasic, morefactors){
-    auto p1 = new parse_node(Token::num_int, 100);
+    auto p1 = std::shared_ptr<parse_node>{new parse_node(Token::num_int, 100)};
     m_lexer->init(" * 45", allowed_multiletter);
     next = m_lexer->next();
     auto p2 = morefactors(p1);
@@ -90,7 +85,6 @@ TEST_F(ParserBasic, morefactors){
     EXPECT_EQ(p2->type(), Token::star);
     EXPECT_EQ(p2->childCount(), 2);
     EXPECT_EQ(p2->getChild(1)->intValue(), 45);
-    delete p2;
 }
 
 TEST_F(ParserBasic, factor){
@@ -107,11 +101,10 @@ TEST_F(ParserBasic, factor){
     EXPECT_EQ(p->getChild(0)->intValue(), 100);
     EXPECT_EQ(p->getChild(1)->type(), Token::num_int);
     EXPECT_EQ(p->getChild(1)->intValue(), 2);
-    delete p;
 }
 
 TEST_F(ParserBasic, moreterms){
-    auto p1 = new parse_node(Token::num_int, 100);
+    auto p1 = std::shared_ptr<parse_node>{new parse_node(Token::num_int, 100)};
     m_lexer->init(" - 45", allowed_multiletter);
     next = m_lexer->next();
     auto p2 = moreterms(p1);
@@ -120,7 +113,6 @@ TEST_F(ParserBasic, moreterms){
     EXPECT_EQ(p2->type(), Token::minus);
     EXPECT_EQ(p2->childCount(), 2);
     EXPECT_EQ(p2->getChild(1)->intValue(), 45);
-    delete p2;
 }
 
 TEST_F(ParserBasic, term){
@@ -136,7 +128,6 @@ TEST_F(ParserBasic, term){
     EXPECT_EQ(p->getChild(0)->intValue(), 100);
     EXPECT_EQ(p->getChild(1)->type(), Token::num_int);
     EXPECT_EQ(p->getChild(1)->intValue(), 2);
-    delete p;
 }
 
 TEST_F(ParserBasic, comment){
@@ -149,7 +140,6 @@ TEST_F(ParserBasic, comment){
     EXPECT_TRUE(p);
     EXPECT_EQ(p->type(), Token::comment);
     EXPECT_EQ(p->stringValue(), "This is a test!");
-    delete p;
 }
 
 TEST_F(ParserBasic, g_continuing){
@@ -221,7 +211,6 @@ TEST_F(ParserBasic, number_int){
     ASSERT_TRUE(p);
     EXPECT_EQ(p->type(), Token::num_int);
     EXPECT_EQ(p->intValue(), 301);
-    delete p;
 
     // Float
     m_lexer->init("100.2", allowed_multiletter);
@@ -231,7 +220,6 @@ TEST_F(ParserBasic, number_int){
     ASSERT_TRUE(p);
     EXPECT_EQ(p->type(), Token::num_float);
     EXPECT_EQ(p->doubleValue(), 100.2);
-    delete p;
 }
 
 TEST_F(ParserBasic, number_float){
@@ -406,7 +394,6 @@ TEST_F(ParserBasic, expr_oop){
     EXPECT_EQ(c1->getChild(0)->intValue(), 4);
     EXPECT_EQ(c1->getChild(1)->type(), Token::num_int);
     EXPECT_EQ(c1->getChild(1)->intValue(), 3);
-    delete p;
 
     // Should be: (2 * 3) + (4 * (SIN[3]))
     m_lexer->init("2 * 3 + 4 * SIN[3]", allowed_multiletter);
@@ -446,7 +433,6 @@ TEST_F(ParserBasic, expr_oop){
     ASSERT_TRUE(c1_1->getChild(0));
     EXPECT_EQ(c1_1->getChild(0)->type(), Token::num_int);
     EXPECT_EQ(c1_1->getChild(0)->intValue(), 3);
-    delete p;
 }
 
 TEST_F(ParserBasic, block){
