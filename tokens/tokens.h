@@ -66,6 +66,8 @@ namespace NCParser {
         static const int string = 203;
 
         // Abstract functions
+        static const int queueing_num = 247;
+        static const int queueing = 248;
         static const int unknown_function = 249;
         static const int left_over_data = 250;
         static const int unary_function = 251;

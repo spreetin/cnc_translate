@@ -64,6 +64,8 @@ public:
     }
 
 protected:
+    std::string to_string() const;
+
     int m_code;
     std::variant<int,double,std::string> m_value;
     std::vector<parse_node*> m_children;

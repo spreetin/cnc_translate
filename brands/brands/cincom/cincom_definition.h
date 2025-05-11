@@ -1,18 +1,19 @@
-#ifndef TRAUB_DEFINITION_H
-#define TRAUB_DEFINITION_H
+#ifndef CINCOM_DEFINITION_H
+#define CINCOM_DEFINITION_H
 
 #include "../../definition_base.h"
 
 namespace NCParser {
 
-class traub_definition : public definition_base
+class cincom_definition : public definition_base
 {
 public:
-    traub_definition() : definition_base() {}
+    cincom_definition() : definition_base() {}
 
     virtual MachineParameters getParameters() override {
         return MachineParameters();
-    };
+    }
+
 
 protected:
     void updateParameters(MachineParameters * param) override;
@@ -20,4 +21,4 @@ protected:
 
 };
 
-#endif // TRAUB_DEFINITION_H
+#endif // CINCOM_DEFINITION_H

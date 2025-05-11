@@ -16,6 +16,7 @@ add_executable(
     parser_test.cpp
     lexer_test.cpp
     test_helpers.h
+    parse_node_gen_test.cpp
 )
 target_link_libraries(
     cnc_testing

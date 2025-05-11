@@ -1,5 +1,6 @@
 #include <limits>
 #include "parse_node.h"
+#include "../generator/parse_node_gen.h"
 
 namespace NCParser {
 
@@ -33,6 +34,5 @@ std::string parse_node::stringValue(){
         return std::string();
     }
 }
-
 
 };

@@ -28,6 +28,11 @@ set(
     tokens/g_codes.h
     tokens/m_codes.h
     errors/errors.h
+    brands/brands/cincom/cincomm32_4m8_definition.h brands/brands/cincom/cincomm32_4m8_definition.cpp
+    brands/brands/cincom/cincom_definition.h brands/brands/cincom/cincom_definition.cpp
+    brands/brands/okuma/okumaosp_p300l.h brands/brands/okuma/okumaosp_p300l.cpp
+    generator/generator.h generator/generator.cpp
+    generator/parse_node_gen.h generator/parse_node_gen.cpp
 )
 
 add_library (

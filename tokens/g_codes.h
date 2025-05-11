@@ -18,6 +18,8 @@ enum GCodesAvailable {
     xy_plane_selection,
     zx_plane_selection,
     zy_plane_selection,
+    yz_plane_selection,
+    yz_cylindrical_plane_selection,
     thread_cutting_constant_lead,
     thread_cutting_increasing_lead,
     thread_cutting_decreasing_lead,
@@ -74,6 +76,10 @@ enum GCodesAvailable {
     thread_cutting_cycle,
     load_subprogram,
     auto_geometry_function,
+    milling_interpolation_on,
+    milling_interpolation_off,
+    thread_cutting_circular_cw,
+    thread_cutting_circular_ccw,
 };
 
 struct GCodeDescription {
@@ -93,6 +99,8 @@ static const std::map<int,GCodeDescription> gcode_descriptions = {
     {xy_plane_selection, {"XY plane selection"}},
     {zx_plane_selection, {"ZX plane selection"}},
     {zy_plane_selection, {"ZY plane selection"}},
+    {yz_plane_selection, {"YZ plane selection"}},
+    {yz_cylindrical_plane_selection, {"YZ cylindrical plane selection"}},
     {thread_cutting_constant_lead, {"Thread cutting, constant lead"}},
     {thread_cutting_increasing_lead, {"Thread cutting, increasing lead"}},
     {thread_cutting_decreasing_lead, {"Thread cutting, decreasing lead"}},
@@ -148,6 +156,10 @@ static const std::map<int,GCodeDescription> gcode_descriptions = {
     {thread_cutting_variable_lead, {}},
     {thread_cutting_cycle, {}},
     {load_subprogram, {}},
+    {milling_interpolation_on, {}},
+    {milling_interpolation_off, {}},
+    {thread_cutting_circular_cw, {}},
+    {thread_cutting_circular_ccw, {}},
 };
 
 };

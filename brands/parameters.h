@@ -41,6 +41,18 @@ struct MachineParameters {
         std::map<std::string,block_function> block;
     } functions;
 
+    struct queueing {
+        bool has_queueing = true;
+        char queueing_single_char = '\0';
+        char queueing_numbered_single_char = '\0';
+        std::string queueing_string;
+        std::string queueing_numbered_string;
+    } queueing;
+
+    std::map<int,SpindleTypes> spindles;
+
+    std::map<char,std::vector<int>> parameter_subtypes;
+
     std::map<char,ParameterType> parameter_defaults = {
         {'A', param_angular_dimension_x},
         {'B', param_angular_dimension_y},

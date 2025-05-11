@@ -4,13 +4,6 @@
 
 namespace NCParser {
 
-void TraubTX8H_definition::updateData(std::shared_ptr<std::map<int,GCode>> gCodes,
-                                 std::shared_ptr<std::map<int,MCode>> mCodes,
-                                 std::shared_ptr<std::map<int, FixedCycleDefinition> > fixedCycleDefinition)
-{
-
-}
-
 MachineParameters TraubTX8H_definition::getParameters()
 {
     MachineParameters param;
@@ -20,6 +13,13 @@ MachineParameters TraubTX8H_definition::getParameters()
     param.general.has_nose_radius_compenstion = true;
     param.maths.use_block_parenthesis = true;
     param.variables.variable_marker = {'L'};
+    param.queueing.queueing_single_char = '!';
+
+    // Axis
+    param.parameter_subtypes['X'] = {1};
+    param.parameter_subtypes['Y'] = {1};
+    param.parameter_subtypes['Z'] = {1};
+    param.parameter_subtypes['C'] = {1};
 
     // Define changed default word meanings
     param.parameter_defaults['C'] = param_c_axis;

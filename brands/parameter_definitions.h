@@ -5,9 +5,11 @@
 #include <variant>
 #include <set>
 #include <memory>
-#include "auto_geometry_function.h"
+
 
 namespace NCParser {
+
+class auto_geometry_function;
 
 struct variable_group {
     char letter;
@@ -63,6 +65,8 @@ enum ParameterType {
     param_z,
 
     // Other meaning
+    param_queueing,
+    param_queueing_numbered,
     param_transfer_feed,
     param_transfer_radius,
     param_transfer_chamfer,
@@ -128,10 +132,11 @@ enum GModalGroups {
     gmode_control_mode = 13,
     gmode_spindle_speed = 14,
     gmode_lathe_diameter_mode = 15,
+    gmode_milling_interpolation = 19,
 };
 
 struct g_word_definition {
-    std::variant<int,std::set<int>> word = -1;
+    std::variant<int,std::set<int>,std::string> word = -1;
     int modal = -1;
     std::set<char> parameters;
     std::map<char,ParameterType> parameter_types;
@@ -187,6 +192,15 @@ struct block_function {
     int type;
     std::string start_token;
     std::string end_token;
+};
+
+enum SpindleTypes {
+    MainSpindle,
+    BackSpindle,
+    GangToolSpindle,
+    TurretToolSpindle,
+    BackRotaryToolSpindle,
+    GuideBushingDrive,
 };
 
 };

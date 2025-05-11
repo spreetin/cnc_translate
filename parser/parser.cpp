@@ -1,18 +1,18 @@
 #include "parser.h"
 #include "../brands/machine_definitions.h"
 #include <iostream>
+#include "../tokens/tokens.h"
 
 namespace NCParser {
 
-parser::parser(Controllers controller, Manufacturers manufacturer, std::string machine)
+parser::parser(Manufacturers manufacturer, std::string machine)
 {
     m_lexer = std::unique_ptr<lexer>(new lexer());
-    init(controller, manufacturer, machine);
+    init(manufacturer, machine);
 }
 
-void parser::init(Controllers controller, Manufacturers manufacturer, std::string machine)
+void parser::init(Manufacturers manufacturer, std::string machine)
 {
-    this->controller = controller;
     this->manufacturer = manufacturer;
     this->machine = machine;
     auto topLayer = std::unique_ptr<definition_base>(MachineDefinitions::getDefinition(manufacturer, machine));
@@ -46,9 +46,9 @@ void parser::init(Controllers controller, Manufacturers manufacturer, std::strin
 bool parser::parse(std::string text)
 {
     m_lexer->init(text, allowed_multiletter);
-    result.clear();
+    m_result.clear();
     start();
-    if (result.size()){
+    if (m_result.size()){
         return true;
     } else {
         return false;
@@ -81,7 +81,7 @@ void parser::start()
     }
     if (next == Token::percent)
         match(Token::percent);
-    result = list();
+    m_result = list();
 }
 
 std::vector<parse_node*> parser::list()
@@ -252,8 +252,12 @@ std::vector<parse_node*> parser::g(bool continuingWord)
         nodes.push_back(new parse_node(Token::g_word, g_type));
         while (def.parameters.contains(next)){
             int param_type;
+            std::vector<int> sub_types;
             if (def.parameter_types.contains(next)){
                 param_type = def.parameter_types.at(next);
+                if (param.parameter_subtypes.contains(next)){
+                    sub_types = param.parameter_subtypes.at(next);
+                }
             } else if (param.parameter_defaults.contains(next)){
                 param_type = param.parameter_defaults.at(next);
             } else { // Invalid word
@@ -261,11 +265,23 @@ std::vector<parse_node*> parser::g(bool continuingWord)
             }
             match(next);
             // TODO Handle extended parameters (i.e. X1=100)
-            parse_node * e = expr();
+            parse_node * e = grabParameterData(sub_types);
             nodes.push_back(new parse_node(Token::parameter, param_type, {e}));
         }
     }
     return nodes;
+}
+
+parse_node *parser::grabParameterData(std::vector<int> sub_types)
+{
+    parse_node * l = expr();
+    if (sub_types.size() > 1 && next == Token::equals){
+        match(Token::equals);
+        parse_node * r = expr();
+        return new parse_node(Token::equals, std::vector<parse_node*>{l, r});
+    } else {
+        return l;
+    }
 }
 
 parse_node *parser::comment()

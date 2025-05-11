@@ -17,15 +17,16 @@ namespace NCParser {
 class parser
 {
 public:
-    parser(Controllers controller, Manufacturers manufacturer, std::string machine);
+    parser(Manufacturers manufacturer, std::string machine);
 
     bool parse(std::string text);
 
-    friend class parse_gcodes;
-    friend class parse_mcodes;
+    std::vector<parse_node*> result(){
+        return m_result;
+    }
 
 protected:
-    void init(Controllers controller, Manufacturers manufacturer, std::string machine);
+    void init(Manufacturers manufacturer, std::string machine);
 
     void match(int code);
 
@@ -37,6 +38,7 @@ protected:
     parse_node *variable();
     parse_node *number();
     std::vector<parse_node *> g(bool continuingWord = false);
+    parse_node *grabParameterData(std::vector<int> sub_types);
     parse_node *comment();
 
     // Math expression parsing
@@ -53,7 +55,6 @@ protected:
     std::map<int,int> active_m_numbers;
 
     std::unique_ptr<lexer> m_lexer;
-    Controllers controller;
     Manufacturers manufacturer;
     std::string machine;
     MachineParameters param;
@@ -63,7 +64,7 @@ protected:
     int last_prepatory_word = -1;
     std::vector<error> errors;
 
-    std::vector<parse_node*> result;
+    std::vector<parse_node*> m_result;
 };
 
 };

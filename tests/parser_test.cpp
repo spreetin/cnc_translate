@@ -1,20 +1,17 @@
-#ifndef PARSER_TEST
-#define PARSER_TEST
-
 #include <gtest/gtest.h>
 #include "../parser/parser.h"
 #include "../tokens/tokens.h"
 
 using namespace NCParser;
 
-class ParserTest : public parser, public testing::Test{
+class ParserBasic : public parser, public testing::Test{
 public:
-    ParserTest() : parser(NCParser::Mitsubishi, NCParser::Traub, "TX8H"), testing::Test() {}
+    ParserBasic() : parser(NCParser::Traub, "TX8H"), testing::Test() {}
 
 protected:
 };
 
-TEST_F(ParserTest, Init){
+TEST_F(ParserBasic, init){
     EXPECT_TRUE(param.general.has_nose_radius_compenstion);
     EXPECT_EQ(param.g[circular_interpolation_ccw].parameter_types['C'], param_transfer_radius);
     EXPECT_TRUE(allowed_multiletter.contains("GOTO"));
@@ -22,7 +19,7 @@ TEST_F(ParserTest, Init){
     EXPECT_TRUE(param.functions.binary.contains("EQ"));
 }
 
-TEST_F(ParserTest, morefuncs){
+TEST_F(ParserBasic, morefuncs){
     auto p1 = new parse_node(Token::num_int);
     m_lexer->init("EQ 2", allowed_multiletter);
     next = m_lexer->next();
@@ -36,7 +33,7 @@ TEST_F(ParserTest, morefuncs){
     delete p2;
 }
 
-TEST_F(ParserTest, func_number){
+TEST_F(ParserBasic, func_number){
     m_lexer->init("100", allowed_multiletter);
     next = m_lexer->next();
     auto p = func();
@@ -47,7 +44,7 @@ TEST_F(ParserTest, func_number){
     delete p;
 }
 
-TEST_F(ParserTest, func_parenthesis){
+TEST_F(ParserBasic, func_parenthesis){
     m_lexer->init("[100]", allowed_multiletter);
     next = m_lexer->next();
     auto p = func();
@@ -58,7 +55,7 @@ TEST_F(ParserTest, func_parenthesis){
     delete p;
 }
 
-TEST_F(ParserTest, func_unary){
+TEST_F(ParserBasic, func_unary){
     m_lexer->init("SQR[10]", allowed_multiletter);
     next = m_lexer->next();
     auto p = func();
@@ -72,7 +69,7 @@ TEST_F(ParserTest, func_unary){
     delete p;
 }
 
-TEST_F(ParserTest, func_variable){
+TEST_F(ParserBasic, func_variable){
     m_lexer->init("L102", allowed_multiletter);
     next = m_lexer->next();
     auto p = func();
@@ -83,7 +80,7 @@ TEST_F(ParserTest, func_variable){
     delete p;
 }
 
-TEST_F(ParserTest, morefactors){
+TEST_F(ParserBasic, morefactors){
     auto p1 = new parse_node(Token::num_int, 100);
     m_lexer->init(" * 45", allowed_multiletter);
     next = m_lexer->next();
@@ -96,7 +93,7 @@ TEST_F(ParserTest, morefactors){
     delete p2;
 }
 
-TEST_F(ParserTest, factor){
+TEST_F(ParserBasic, factor){
     // Binary operator
     m_lexer->init("100 EQ 2", allowed_multiletter);
     next = m_lexer->next();
@@ -113,7 +110,7 @@ TEST_F(ParserTest, factor){
     delete p;
 }
 
-TEST_F(ParserTest, moreterms){
+TEST_F(ParserBasic, moreterms){
     auto p1 = new parse_node(Token::num_int, 100);
     m_lexer->init(" - 45", allowed_multiletter);
     next = m_lexer->next();
@@ -126,7 +123,7 @@ TEST_F(ParserTest, moreterms){
     delete p2;
 }
 
-TEST_F(ParserTest, term){
+TEST_F(ParserBasic, term){
     // Multiply
     m_lexer->init("100 * 2", allowed_multiletter);
     next = m_lexer->next();
@@ -142,7 +139,7 @@ TEST_F(ParserTest, term){
     delete p;
 }
 
-TEST_F(ParserTest, comment){
+TEST_F(ParserBasic, comment){
     m_lexer->init("(This is a test!)\n", allowed_multiletter);
     next = m_lexer->next();
     auto p = comment();
@@ -155,7 +152,7 @@ TEST_F(ParserTest, comment){
     delete p;
 }
 
-TEST_F(ParserTest, g_continuing){
+TEST_F(ParserBasic, g_continuing){
     m_lexer->init("G1 X100 T0202\nX20 Z10", allowed_multiletter);
     next = m_lexer->next();
 
@@ -215,7 +212,7 @@ TEST_F(ParserTest, g_continuing){
     EXPECT_EQ(p[2]->getChild(0)->intValue(), 10);
 }
 
-TEST_F(ParserTest, number_int){
+TEST_F(ParserBasic, number_int){
     // Int
     m_lexer->init("301", allowed_multiletter);
     next = m_lexer->next();
@@ -237,11 +234,11 @@ TEST_F(ParserTest, number_int){
     delete p;
 }
 
-TEST_F(ParserTest, number_float){
+TEST_F(ParserBasic, number_float){
 
 }
 
-TEST_F(ParserTest, variable){
+TEST_F(ParserBasic, variable){
     m_lexer->init("L301", allowed_multiletter);
     next = m_lexer->next();
     auto p = variable();
@@ -251,7 +248,7 @@ TEST_F(ParserTest, variable){
     EXPECT_EQ(p->intValue(), 301);
 }
 
-TEST_F(ParserTest, assignment){
+TEST_F(ParserBasic, assignment){
     m_lexer->init("L301 = 2", allowed_multiletter);
     next = m_lexer->next();
     auto p = assignment();
@@ -266,7 +263,7 @@ TEST_F(ParserTest, assignment){
     EXPECT_EQ(p->getChild(1)->intValue(), 2);
 }
 
-TEST_F(ParserTest, expr_number){
+TEST_F(ParserBasic, expr_number){
     m_lexer->init("256", allowed_multiletter);
     next = m_lexer->next();
     auto p = expr();
@@ -276,7 +273,7 @@ TEST_F(ParserTest, expr_number){
     EXPECT_EQ(p->intValue(), 256);
 }
 
-TEST_F(ParserTest, expr_variable){
+TEST_F(ParserBasic, expr_variable){
     // Variable
     m_lexer->init("L200", allowed_multiletter);
     next = m_lexer->next();
@@ -287,7 +284,7 @@ TEST_F(ParserTest, expr_variable){
     EXPECT_EQ(p->intValue(), 200);
 }
 
-TEST_F(ParserTest, expr_term){
+TEST_F(ParserBasic, expr_term){
     // Addition
     m_lexer->init("5 - 2", allowed_multiletter);
     next = m_lexer->next();
@@ -304,7 +301,7 @@ TEST_F(ParserTest, expr_term){
     EXPECT_EQ(p->getChild(1)->intValue(), 2);
 }
 
-TEST_F(ParserTest, expr_factor){
+TEST_F(ParserBasic, expr_factor){
     // Division
     m_lexer->init("5 / 2", allowed_multiletter);
     next = m_lexer->next();
@@ -321,7 +318,7 @@ TEST_F(ParserTest, expr_factor){
     EXPECT_EQ(p->getChild(1)->intValue(), 2);
 }
 
-TEST_F(ParserTest, expr_unary){
+TEST_F(ParserBasic, expr_unary){
     // Unary function
     m_lexer->init("SQR[9]", allowed_multiletter);
     next = m_lexer->next();
@@ -336,7 +333,7 @@ TEST_F(ParserTest, expr_unary){
     EXPECT_EQ(p->getChild(0)->intValue(), 9);
 }
 
-TEST_F(ParserTest, expr_binary){
+TEST_F(ParserBasic, expr_binary){
     // Binary function
     m_lexer->init("2 EQ 3", allowed_multiletter);
     next = m_lexer->next();
@@ -354,7 +351,7 @@ TEST_F(ParserTest, expr_binary){
     EXPECT_EQ(p->getChild(1)->intValue(), 3);
 }
 
-TEST_F(ParserTest, expr_parenthesis){
+TEST_F(ParserBasic, expr_parenthesis){
     m_lexer->init("[2 + 4] * 3", allowed_multiletter);
     next = m_lexer->next();
     auto p = expr();
@@ -382,7 +379,7 @@ TEST_F(ParserTest, expr_parenthesis){
     EXPECT_EQ(c1->intValue(), 3);
 }
 
-TEST_F(ParserTest, expr_oop){
+TEST_F(ParserBasic, expr_oop){
     // Should be: 2 + (4 * 3)
     m_lexer->init("2 + 4 * 3", allowed_multiletter);
     next = m_lexer->next();
@@ -452,7 +449,7 @@ TEST_F(ParserTest, expr_oop){
     delete p;
 }
 
-TEST_F(ParserTest, block){
+TEST_F(ParserBasic, block){
     m_lexer->init("G0 X100 Z20 S2000 T0303 M17\nG1 U20 W10\nU10W1", allowed_multiletter);
     next = m_lexer->next();
 
@@ -563,7 +560,7 @@ TEST_F(ParserTest, block){
     EXPECT_EQ(c2->intValue(), pType);
 }
 
-TEST_F(ParserTest, list){
+TEST_F(ParserBasic, list){
     m_lexer->init("G0 X100 Z20 S2000 T0303 M17\nG1 U20 W10\nU10W1", allowed_multiletter);
     next = m_lexer->next();
 
@@ -677,8 +674,6 @@ TEST_F(ParserTest, list){
     EXPECT_EQ(c2->intValue(), pType);
 }
 
-TEST_F(ParserTest, program){
+TEST_F(ParserBasic, program){
     // TODO Add a full NC program to test parsing on
 }
-
-#endif //PARSER_TEST
