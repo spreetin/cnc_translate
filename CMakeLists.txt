@@ -16,7 +16,6 @@ set(
     parser/parser.h parser/parser.cpp
     brands/definition_base.h brands/definition_base.cpp
     brands/brands/traub/traubtx8h_definition.h brands/brands/traub/traubtx8h_definition.cpp
-
     parser/parse_node.h parser/parse_node.cpp
     brands/brands.h
     brands/machine_definitions.h
@@ -33,6 +32,11 @@ set(
     brands/brands/okuma/okumaosp_p300l.h brands/brands/okuma/okumaosp_p300l.cpp
     generator/generator.h generator/generator.cpp
     generator/parse_node_gen.h generator/parse_node_gen.cpp
+    tokens/g_code_description.h
+    tokens/m_code_descriptions.h
+    regex/regex_wrapper.h regex/regex_wrapper.cpp
+
+    ctre/ctre.hpp ctre/ctre-unicode.hpp ctre/unicode-db.hpp
 )
 
 add_library (
@@ -43,9 +47,10 @@ add_library (
     cnc_parse_test
     ${common_src}
 )
-set_target_properties(cnc_parse_test PROPERTIES COMPILE_FLAGS "-DTESTING")
 
 add_subdirectory(tests)
+
+set_target_properties(cnc_parse_test PROPERTIES COMPILE_FLAGS "-DTESTING")
 
 include(GNUInstallDirs)
 install(TARGETS cnc_translate

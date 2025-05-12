@@ -66,6 +66,8 @@ namespace NCParser {
         static const int string = 203;
 
         // Abstract functions
+        static const int subsystem_select = 245;
+        static const int block_delete = 246;
         static const int queueing_num = 247;
         static const int queueing = 248;
         static const int unknown_function = 249;

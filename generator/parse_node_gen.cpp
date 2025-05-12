@@ -8,9 +8,9 @@
 
 namespace NCParser {
 
-std::string NCParser::parse_node_gen::generate(std::shared_ptr<parse_node>block, MachineParameters *param)
+std::string NCParser::parse_node_gen::generate(parse_node_p block, MachineParameters *param)
 {
-    if (!block->childCount()){
+    if (!block->childCount() || block->type() != Token::block){
         return expr(block, param);
     }
     std::stringstream ss;
@@ -35,22 +35,56 @@ std::string NCParser::parse_node_gen::generate(std::shared_ptr<parse_node>block,
                 std::cerr << (error{error::Generating, -1, -1, "No queueing enabled. Ignoring."}).to_string();
             }
             break;
+        case Token::subsystem_select:
+        {
+            if (param->subsystem.symbol == Token::g_word){
+                switch (n->intValue()){
+                case 1:
+                    if (param->g.contains(g_use_subsystem_a)){
+                        ss << "G" << std::to_string(std::get<int>(param->g[g_use_subsystem_a].word));
+                    }
+                    break;
+                case 2:
+                    if (param->g.contains(g_use_subsystem_b)){
+                        ss << "G" << std::to_string(std::get<int>(param->g[g_use_subsystem_b].word));
+                    }
+                    break;
+                case 3:
+                    if (param->g.contains(g_use_subsystem_c)){
+                        ss << "G" << std::to_string(std::get<int>(param->g[g_use_subsystem_c].word));
+                    }
+                    break;
+                case 4:
+                    if (param->g.contains(g_use_subsystem_d)){
+                        ss << "G" << std::to_string(std::get<int>(param->g[g_use_subsystem_d].word));
+                    }
+                    break;
+                }
+            } else {
+                ss << param->subsystem.symbol << std::to_string(n->intValue());
+            }
+        }
         case Token::g_word:
         {
             g_code = n->intValue();
-            auto g_def = param->g[g_code];
-            int vIndex = g_def.word.index();
-            ss << "G";
-            switch (vIndex){
-            case 0:
-                ss << std::to_string(std::get<int>(g_def.word)) << " "; break;
-            case 1:
-                // TODO Implement handling
-                ss << "N/A ";
-                break;
-            case 2:
-                ss << std::get<std::string>(g_def.word) << " "; break;
+            if (param->g.contains(g_code)){
+                auto g_def = param->g[g_code];
+                int vIndex = g_def.word.index();
+                ss << "G";
+                switch (vIndex){
+                case 0:
+                    ss << std::to_string(std::get<int>(g_def.word)) << " "; break;
+                case 1:
+                    // TODO Implement handling
+                    ss << "N/A ";
+                    break;
+                case 2:
+                    ss << std::get<std::string>(g_def.word) << " "; break;
+                }
+            } else {
+                // TODO Handle non-existant G-ocdes
             }
+
         } break;
         case Token::m_word:
             if (param->m.contains(n->intValue())){
@@ -66,6 +100,8 @@ std::string NCParser::parse_node_gen::generate(std::shared_ptr<parse_node>block,
             std::cerr << (error{}).to_string();
             break;
         case Token::block_function:
+            // TODO Implement
+            break;
         case Token::parameter:
         {
             auto g_def = param->g[g_code];
@@ -78,7 +114,7 @@ std::string NCParser::parse_node_gen::generate(std::shared_ptr<parse_node>block,
                 }
             }
             if (!m){
-                for (auto i : param->parameter_defaults){
+                for (auto i : param->parameter.defaults){
                     if (i.second == id){
                         m = i.first;
                         break;
@@ -94,15 +130,13 @@ std::string NCParser::parse_node_gen::generate(std::shared_ptr<parse_node>block,
             ss << expr(n->getChild(0), param) << " ";
         } break;
         case Token::prg_name:
-            for (auto i : param->parameter_defaults){
+            for (auto i : param->parameter.defaults){
                 if (i.second == param_prg_name){
                     ss << i.first << n->stringValue();
                     break;
                 }
             }
             break;
-        case Token::variable:
-            ss << expr(n, param); break;
         case Token::comment:
             if (param->comments.use_parenthesis){
                 ss << "(" << n->stringValue() << ")";
@@ -113,16 +147,18 @@ std::string NCParser::parse_node_gen::generate(std::shared_ptr<parse_node>block,
             }
         case Token::block:
             ss << generate(n, param); break;
+        default:
+            ss << expr(n, param);
         }
     }
     ss << "\n";
     return ss.str();
 }
 
-std::string NCParser::parse_node_gen::expr(std::shared_ptr<parse_node>n, MachineParameters *param)
+std::string NCParser::parse_node_gen::expr(parse_node_p n, MachineParameters *param)
 {
     static auto get_func = [](int v, std::map<std::string,int> * m) -> std::string{
-        for (auto i : *m){
+        for (auto &i : *m){
             if (i.second == v){
                 return i.first;
             }
@@ -136,7 +172,11 @@ std::string NCParser::parse_node_gen::expr(std::shared_ptr<parse_node>n, Machine
     switch (n->type()){
     // Binary
     case Token::equals:
-        ss << expr(n->getChild(0), param) << " = " << expr(n->getChild(1), param); break;
+        if (n->childCount() > 1){
+            ss << expr(n->getChild(0), param) << " = " << expr(n->getChild(1), param); break;
+        } else {
+            ss << " = " << expr(n->getChild(0), param); break;
+        }
     case Token::star:
         ss << "[" << expr(n->getChild(0), param) << " * " << expr(n->getChild(1), param) << "]"; break;
     case Token::plus:
@@ -168,7 +208,7 @@ std::string NCParser::parse_node_gen::expr(std::shared_ptr<parse_node>n, Machine
                 break;
             }
         } else {
-            for (auto i : param->parameter_defaults){
+            for (auto i : param->parameter.defaults){
                 if (i.second == param_variable){
                     ss << i.first << n->stringValue();
                     break;

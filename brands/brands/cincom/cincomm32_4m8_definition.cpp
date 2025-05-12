@@ -13,16 +13,16 @@ MachineParameters CincomM32_4M8_definition::getParameters()
     param.queueing.queueing_numbered_single_char = 'L';
 
     // Axis
-    param.parameter_subtypes['X'] = {1, 2, 3};
-    param.parameter_subtypes['Y'] = {1, 2, 3};
-    param.parameter_subtypes['Z'] = {1, 2, 3};
-    param.parameter_subtypes['U'] = {1, 2, 3};
-    param.parameter_subtypes['W'] = {1, 2, 3};
-    param.parameter_subtypes['V'] = {1, 2, 3};
-    param.parameter_subtypes['A'] = {3, 4, 7};
-    param.parameter_subtypes['B'] = {1};
-    param.parameter_subtypes['C'] = {1, 2};
-    param.parameter_subtypes['H'] = {1, 2};
+    param.parameter.subtypes['X'] = {1, 2, 3};
+    param.parameter.subtypes['Y'] = {1, 2, 3};
+    param.parameter.subtypes['Z'] = {1, 2, 3};
+    param.parameter.subtypes['U'] = {1, 2, 3};
+    param.parameter.subtypes['W'] = {1, 2, 3};
+    param.parameter.subtypes['V'] = {1, 2, 3};
+    param.parameter.subtypes['A'] = {3, 4, 7};
+    param.parameter.subtypes['B'] = {1};
+    param.parameter.subtypes['C'] = {1, 2};
+    param.parameter.subtypes['H'] = {1, 2};
 
     // Spindles
     param.spindles[1] = MainSpindle;
@@ -33,8 +33,8 @@ MachineParameters CincomM32_4M8_definition::getParameters()
     param.spindles[9] = GuideBushingDrive;
 
     // Define changed default word meanings
-    param.parameter_defaults['O'] = param_prg_name;
-    param.parameter_defaults['L'] = param_queueing_numbered;
+    param.parameter.defaults['O'] = param_prg_name;
+    param.parameter.defaults['L'] = param_queueing_numbered;
 
     // Variables
 
@@ -43,22 +43,22 @@ MachineParameters CincomM32_4M8_definition::getParameters()
     // Unset default G-codes that are not valid
 
     // Set all defined G-codes
-    param.g[rapid_positioning] = {0, gmode_motion};
-    param.g[linear_interpolation] = {1, gmode_motion};
-    param.g[circular_interpolation_cw] = {2, gmode_motion};
-    param.g[circular_interpolation_ccw] = {3, gmode_motion};
-    param.g[dwell] = {4, gmode_nonmodal};
-    param.g[exact_stop] = {9, gmode_nonmodal};
-    param.g[milling_interpolation_on] = {"12.1", gmode_milling_interpolation};
-    param.g[milling_interpolation_off] = {"13.1", gmode_milling_interpolation};
-    param.g[yz_cylindrical_plane_selection] = {16, gmode_plane_selection};
-    param.g[xy_plane_selection] = {17, gmode_plane_selection};
-    param.g[zx_plane_selection] = {18, gmode_plane_selection};
-    param.g[yz_plane_selection] = {19, gmode_plane_selection};
-    param.g[thread_cutting_constant_lead] = {32, gmode_motion};
-    param.g[thread_cutting_variable_lead] = {34, gmode_motion};
-    param.g[thread_cutting_circular_cw] = {35, gmode_motion};
-    param.g[thread_cutting_circular_ccw] = {36, gmode_motion};
+    param.g[g_rapid_positioning] = {0, gmode_motion};
+    param.g[g_linear_interpolation] = {1, gmode_motion};
+    param.g[g_circular_interpolation_cw] = {2, gmode_motion};
+    param.g[g_circular_interpolation_ccw] = {3, gmode_motion};
+    param.g[g_dwell] = {4, gmode_nonmodal};
+    param.g[g_exact_stop] = {9, gmode_nonmodal};
+    param.g[g_milling_interpolation_on] = {"12.1", gmode_milling_interpolation};
+    param.g[g_milling_interpolation_off] = {"13.1", gmode_milling_interpolation};
+    param.g[g_yz_cylindrical_plane_selection] = {16, gmode_plane_selection};
+    param.g[g_xy_plane_selection] = {17, gmode_plane_selection};
+    param.g[g_zx_plane_selection] = {18, gmode_plane_selection};
+    param.g[g_yz_plane_selection] = {19, gmode_plane_selection};
+    param.g[g_thread_cutting_constant_lead] = {32, gmode_motion};
+    param.g[g_thread_cutting_variable_lead] = {34, gmode_motion};
+    param.g[g_thread_cutting_circular_cw] = {35, gmode_motion};
+    param.g[g_thread_cutting_circular_ccw] = {36, gmode_motion};
 
     // Define M-codes
 

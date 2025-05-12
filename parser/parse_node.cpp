@@ -24,7 +24,15 @@ std::string parse_node::stringValue(){
     try {
         return std::get<std::string>(m_value);
     } catch (std::bad_variant_access e){
-        return std::string();
+        int index = m_value.index();
+        switch (index){
+        case 0:
+            return std::to_string(std::get<int>(m_value));
+        case 1:
+            return std::to_string(std::get<double>(m_value));
+        default:
+            return "";
+        }
     }
 }
 
