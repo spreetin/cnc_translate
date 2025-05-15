@@ -11,22 +11,23 @@
 #include "../brands/parameters.h"
 #include "../brands/brands.h"
 #include "../errors/errors.h"
+#include "../tokens/tokens.h"
 
 namespace NCParser {
 
 class parser
 {
 public:
-    parser(Manufacturers manufacturer, std::string machine);
+    parser(Manufacturers manufacturer, std::string_view machine);
 
     bool parse(std::string text);
 
-    std::vector<parse_node_p> result(){
-        return m_result;
+    parse_node_p result(){
+        return parse_node_p{new parse_node(Token::list, m_result)};
     }
 
 protected:
-    void init(Manufacturers manufacturer, std::string machine);
+    void init(Manufacturers manufacturer, std::string_view machine);
 
     void match(int code);
 
@@ -56,7 +57,7 @@ protected:
 
     std::unique_ptr<lexer> m_lexer;
     Manufacturers manufacturer;
-    std::string machine;
+    std::string_view machine;
     MachineParameters param;
 
     int next;

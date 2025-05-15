@@ -33,7 +33,7 @@ struct error {
                 ss << " on line " << std::to_string(line) << ".";
             }
         }
-        ss << " Msg: " << msg;
+        ss << " Msg: " << msg << "\n";
         return ss.str();
     }
 };

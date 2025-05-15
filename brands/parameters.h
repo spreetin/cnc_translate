@@ -103,7 +103,7 @@ struct MachineParameters {
 
 
     std::map<int, g_word_definition> g = {
-        {g_rapid_positioning, {0, gmode_motion, {'X', 'Y', 'Z', 'U', 'V', 'W', 'A', 'B', 'C', 'F', 'S', 'T'}}},
+        /*{g_rapid_positioning, {0, gmode_motion, {'X', 'Y', 'Z', 'U', 'V', 'W', 'A', 'B', 'C', 'F', 'S', 'T'}}},
         {g_linear_interpolation, {1, gmode_motion}},
         {g_circular_interpolation_cw, {2, gmode_motion}},
         {g_circular_interpolation_ccw, {3, gmode_motion}},
@@ -138,36 +138,7 @@ struct MachineParameters {
         {g_feed_per_revolution, {95, gmode_feed_rate}},
         {g_constant_surface_speed, {96, gmode_spindle_speed}},
         {g_revolutions_per_minute, {97, gmode_spindle_speed}},
-        {g_coordinate_system_set, {-1, -1, {'P', 'X', 'Y', 'Z', 'A', 'B', 'C'}}},
-        {g_initial_level_return_fixed, {}},
-        {g_r_point_return_fixed, {}},
-        {g_rpm_limit, {}},
-        {g_feed_correction, {}},
-        {g_feed_correction_off, {}},
-        {g_home_position_x, {}},
-        {g_home_position_z, {}},
-        {g_home_position_ordered_xz, {}},
-        {g_home_position_ordered_zx, {}},
-        {g_rapid_direct_to_reference, {}},
-        {g_rapid_relative_to_reference, {}},
-        {g_linear_interpolation_with_feed_reduction, {}},
-        {g_cutter_compensation_auto, {}},
-        {g_linear_interpolation_with_collision_stop, {}},
-        {g_cutting_cycle_convex_tool_x, {}},
-        {g_cutting_cycle_concave_tool_x, {}},
-        {g_cutting_cycle_z, {}},
-        {g_cutting_cycle_same_contour, {}},
-        {g_cutting_cycle_straight_with_fallback, {}},
-        {g_cutting_cycle_straight_with_fallback_z, {}},
-        {g_bevel_cycle_towards_spindle, {}},
-        {g_bevel_cycle_against_spindle, {}},
-        {g_cycle_repetition, {}},
-        {g_drill_cycle_step_number, {}},
-        {g_drill_cycle_step_distance, {}},
-        {g_thread_cutting_variable_lead, {}},
-        {g_thread_cutting_cycle, {}},
-        {g_load_subprogram, {}},
-        {g_auto_geometry_function, {}}
+        {g_coordinate_system_set, {-1, -1, {'P', 'X', 'Y', 'Z', 'A', 'B', 'C'}}}*/
     };
 
     std::vector<g_word_definition> auto_geometry_functions;

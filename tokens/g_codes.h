@@ -69,6 +69,9 @@ enum GCodesAvailable {
     g_milling_line_end_face,
     g_milling_curve_cw_end_face,
     g_milling_curve_ccw_end_face,
+    g_milling_tool_compensation_cancel,
+    g_milling_tool_compensation_left,
+    g_milling_tool_compensation_right,
     g_parabolic_interpolation,
     g_preload_registers,
     g_r_point_return_fixed,
@@ -105,6 +108,9 @@ enum GCodesAvailable {
     g_zero_shift,
     g_zx_plane_selection,
     g_zy_plane_selection,
+    g_turning_mode,
+    g_c_axis_mode,
+    g_y_axis_mode,
 };
 
 };

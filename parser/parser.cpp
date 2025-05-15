@@ -5,13 +5,13 @@
 
 namespace NCParser {
 
-parser::parser(Manufacturers manufacturer, std::string machine)
+parser::parser(Manufacturers manufacturer, std::string_view machine)
 {
     m_lexer = std::unique_ptr<lexer>(new lexer());
     init(manufacturer, machine);
 }
 
-void parser::init(Manufacturers manufacturer, std::string machine)
+void parser::init(Manufacturers manufacturer, std::string_view machine)
 {
     this->manufacturer = manufacturer;
     this->machine = machine;
@@ -79,8 +79,8 @@ void parser::start()
         errors.push_back(m_lexer->last_error());
         std::cerr << m_lexer->last_error().to_string() << std::endl;
     }
-    if (next == Token::percent)
-        match(Token::percent);
+    //if (next == Token::percent)
+    //    match(Token::percent);
     m_result = list();
 }
 
@@ -104,14 +104,22 @@ parse_node_p parser::block()
      * The order of parameters are accepted even when they would be wrong according to the standard.
      */
     auto rowItem = parse_node_p{new parse_node(Token::block)};
+    if (next == Token::slash){
+        match(Token::slash);
+        rowItem->appendChild(parse_node_p{new parse_node(Token::block_delete)});
+    }
     if (next == Token::n_word){
         std::string blockNum = m_lexer->string_value();
         match(Token::n_word);
         rowItem->appendChild(parse_node_p{new parse_node(Token::n_word, blockNum)});
     }
-    if (next == Token::slash){
-        match(Token::slash);
-        rowItem->appendChild(parse_node_p{new parse_node(Token::block_delete)});
+    if (next == Token::percent){
+        match(Token::percent);
+        rowItem->appendChild(parse_node_p{new parse_node(Token::percent)});
+    }
+    if (param.parameter.defaults[next] == param_prg_name){
+        match(next);
+        rowItem->appendChild(parse_node_p{new parse_node(Token::prg_name, {expr()})});
     }
     if (next == param.subsystem.symbol){
         if (next == Token::g_word){

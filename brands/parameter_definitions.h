@@ -138,6 +138,7 @@ enum ParameterType {
     param_variable,
     parma_tool_selection_pos,
     param_x_start,
+    param_opposing_spindle_approach_axis,
 };
 
 enum GModalGroups {

@@ -85,6 +85,7 @@ namespace NCParser {
         static const int error = 261;
         static const int done = 262;
         static const int block = 263;
+        static const int list = 264;
     };
 
     enum Duration {

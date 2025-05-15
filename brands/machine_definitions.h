@@ -10,7 +10,7 @@ namespace NCParser {
 
 class MachineDefinitions {
 public:
-    inline static definition_base * getDefinition(Manufacturers manufacturer, std::string machine){
+    inline static definition_base * getDefinition(Manufacturers manufacturer, std::string_view machine){
         switch (manufacturer){
         case Traub:
             if (machine == "TX8H"){

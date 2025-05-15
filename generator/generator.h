@@ -12,16 +12,14 @@ namespace NCParser {
 class generator
 {
 public:
-    generator(Manufacturers manufacturer, std::string machine);
+    generator(Manufacturers manufacturer, std::string_view machine);
 
-    std::string generate(std::vector<parse_node_p> root);
+    std::string generate(parse_node_p root);
 
 protected:
-    std::string expr(parse_node_p node);
-
     MachineParameters param;
     Manufacturers manufacturer;
-    std::string machine;
+    std::string_view machine;
 };
 
 }

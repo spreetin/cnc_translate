@@ -4,10 +4,18 @@ project(cnc_translate LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_executable(cnc_translate main.cpp)
+add_executable(
+    cnc_translate
+    main.cpp
+    cli_options.h cli_options.cpp
+)
 
-target_link_libraries(cnc_translate cnc_parse)
+target_link_libraries(
+    cnc_translate
+    cnc_parse
+)
 
 set(
     common_src
@@ -35,7 +43,13 @@ set(
     tokens/g_code_description.h
     tokens/m_code_descriptions.h
     regex/regex_wrapper.h regex/regex_wrapper.cpp
+    generator/generate_g_milling.cpp
+    generator/generate_g_threads.cpp
+    generator/generate_g_tools.cpp
+    generator/generate_g_settings.cpp
+    generator/generate_g_cutting.cpp
 
+    # Compile time regular expressions library
     ctre/ctre.hpp ctre/ctre-unicode.hpp ctre/unicode-db.hpp
 )
 
