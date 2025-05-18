@@ -37,13 +37,13 @@ public:
     void appendChildren(std::vector<parse_node_p> c){
         m_children.insert(m_children.end(), c.begin(), c.end());
     }
-    std::vector<parse_node_p> children(){
+    std::vector<parse_node_p> children() const{
         return m_children;
     }
-    int childCount(){
+    int childCount() const{
         return m_children.size();
     }
-    parse_node_p getChild(int index){
+    parse_node_p getChild(int index) const{
         if (m_children.size() <= index)
             return nullptr;
         return m_children.at(index);
@@ -53,16 +53,13 @@ public:
     void setValue(std::variant<int,double,std::string> v){
         m_value = v;
     }
-    std::variant<int,double,std::string> value(){
-        return m_value;
-    }
 
     int intValue();
     double doubleValue();
     std::string stringValue();
 
     // Type
-    int type(){
+    int type() const{
         return m_code;
     }
     void setType(int type){

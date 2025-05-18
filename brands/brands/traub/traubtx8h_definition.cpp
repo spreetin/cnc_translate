@@ -380,10 +380,10 @@ MachineParameters TraubTX8H_definition::getParameters()
 
     // Define functions
     param.auto_geometry_functions = {
-        {101, gmode_motion, {}, {}, std::shared_ptr<auto_geometry_function>{new traub_function_g101()}},
-        {102, gmode_motion, {}, {}, std::shared_ptr<auto_geometry_function>{new traub_function_g102()}},
-        {105, gmode_motion, {}, {}, std::shared_ptr<auto_geometry_function>{new traub_function_g105()}},
-        {106, gmode_motion, {}, {}, std::shared_ptr<auto_geometry_function>{new traub_function_g106()}},
+        {101, std::shared_ptr<auto_geometry_function>{new traub_function_g101()}},
+        {102, std::shared_ptr<auto_geometry_function>{new traub_function_g102()}},
+        {105, std::shared_ptr<auto_geometry_function>{new traub_function_g105()}},
+        {106, std::shared_ptr<auto_geometry_function>{new traub_function_g106()}},
     };
     return param;
 }

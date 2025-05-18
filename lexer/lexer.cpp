@@ -104,7 +104,7 @@ int lexer::finish_comment(char end)
     return next();
 }
 
-int lexer::int_value()
+int lexer::int_value() const
 {
     switch (vValue.index()){
     case 0:
@@ -117,7 +117,7 @@ int lexer::int_value()
     return -1;
 }
 
-double lexer::double_value()
+double lexer::double_value() const
 {
     switch (vValue.index()){
     case 0:
@@ -130,7 +130,7 @@ double lexer::double_value()
     return -1;
 }
 
-std::string lexer::string_value()
+std::string lexer::string_value() const
 {
     switch (vValue.index()){
     case 0:
@@ -143,7 +143,7 @@ std::string lexer::string_value()
     return "";
 }
 
-char lexer::peek(bool single)
+char lexer::peek(bool single) const
 {
     if (single){
         if (text.length() > m_pos){

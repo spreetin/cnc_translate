@@ -28,8 +28,8 @@ target_link_libraries(
 include(GoogleTest)
 gtest_discover_tests(cnc_testing)
 
-#add_custom_command(
-#  TARGET cnc_testing
-#  POST_BUILD
-#  COMMAND $<TARGET_FILE:cnc_testing>
-#)
+add_custom_command(
+  TARGET cnc_testing
+  POST_BUILD
+  COMMAND $<TARGET_FILE:cnc_testing>
+)

@@ -17,18 +17,7 @@ generator::generator(Manufacturers manufacturer, std::string_view machine) {
 std::string generator::generate(parse_node_p root)
 {
     std::stringstream ss;
-    int block_no = 1;
-    ss << parse_node_gen(&param).generate(root, {}).first;
-    /*for (auto block : root){
-        if (block){
-            ss << parse_node_gen().generate(block, &param);
-        } else {
-            std::cerr << (error{error::Generating, block_no, -1,
-                                "Block pointer is null"}).to_string();
-        }
-        ss << "\n";
-        block_no++;
-    }*/
+    ss << parse_node_gen(&param, root, {}).generate();
     return ss.str();
 }
 

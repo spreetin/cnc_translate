@@ -4,11 +4,29 @@
 #include <set>
 #include <vector>
 #include <map>
+#include <type_traits>
 #include "parameter_definitions.h"
 #include "../tokens/g_codes.h"
 #include "../tokens/m_codes.h"
 
 namespace NCParser {
+
+// Helper function to find if a value exists in a map, and get its key
+static auto indexIn = []<typename F, typename S> (std::map<F,S> map, const S &value) -> F
+{
+    for (auto i : map){
+        if (i.second == value){
+            return i.first;
+        }
+    }
+    if (std::is_arithmetic_v<F>){
+        if (std::is_signed_v<F>)
+            return -1;
+        return 0;
+    } else {
+        return F{};
+    }
+};
 
 struct MachineParameters {
 
@@ -100,10 +118,8 @@ struct MachineParameters {
         std::set<char> always_useable;
     } parameter;
 
-
-
-    std::map<int, g_word_definition> g = {
-        /*{g_rapid_positioning, {0, gmode_motion, {'X', 'Y', 'Z', 'U', 'V', 'W', 'A', 'B', 'C', 'F', 'S', 'T'}}},
+    std::map<int, g_word_definition> g; /*= {
+        {g_rapid_positioning, {0, gmode_motion, {'X', 'Y', 'Z', 'U', 'V', 'W', 'A', 'B', 'C', 'F', 'S', 'T'}}},
         {g_linear_interpolation, {1, gmode_motion}},
         {g_circular_interpolation_cw, {2, gmode_motion}},
         {g_circular_interpolation_ccw, {3, gmode_motion}},
@@ -138,13 +154,12 @@ struct MachineParameters {
         {g_feed_per_revolution, {95, gmode_feed_rate}},
         {g_constant_surface_speed, {96, gmode_spindle_speed}},
         {g_revolutions_per_minute, {97, gmode_spindle_speed}},
-        {g_coordinate_system_set, {-1, -1, {'P', 'X', 'Y', 'Z', 'A', 'B', 'C'}}}*/
-    };
-
-    std::vector<g_word_definition> auto_geometry_functions;
+        {g_coordinate_system_set, {-1, -1, {'P', 'X', 'Y', 'Z', 'A', 'B', 'C'}}}
+    };*/
 
     std::map<int, m_word_definition> m;
 
+    std::map<int,std::shared_ptr<auto_geometry_function>> auto_geometry_functions;
 };
 
 };

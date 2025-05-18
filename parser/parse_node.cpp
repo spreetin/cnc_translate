@@ -14,8 +14,12 @@ int parse_node::intValue(){
 
 double parse_node::doubleValue(){
     try {
-        return std::get<double>(m_value);
-    } catch (std::bad_variant_access){
+        switch (m_value.index()){
+        case 0: return (double) std::get<0>(m_value);
+        case 1: return std::get<double>(m_value);
+        default: return std::stod(std::get<2>(m_value));
+        }
+    } catch (std::invalid_argument){
         return std::numeric_limits<double>::min();
     }
 }
@@ -24,8 +28,7 @@ std::string parse_node::stringValue(){
     try {
         return std::get<std::string>(m_value);
     } catch (std::bad_variant_access e){
-        int index = m_value.index();
-        switch (index){
+        switch (m_value.index()){
         case 0:
             return std::to_string(std::get<int>(m_value));
         case 1:

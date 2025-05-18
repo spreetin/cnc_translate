@@ -3,7 +3,7 @@
 
 #include <string>
 #include <memory>
-#include <variant>
+#include <vector>
 #include <map>
 
 namespace NCParser {
@@ -12,11 +12,14 @@ class parse_node;
 typedef std::shared_ptr<parse_node> parse_node_p;
 struct MachineParameters;
 
+/*!
+ * \brief Takes a parse tree root node and generates code for the chosen machine from it
+ */
 class parse_node_gen
 {
 public:
     struct machine_state {
-        std::map<char,std::variant<int,double>> axis_positions = {
+        std::map<char,double> axis_positions = {
             {'X', 0},
             {'Y', 0},
             {'Z', 0}
@@ -24,30 +27,40 @@ public:
         enum feed_mode {
             FeedPerMinute,
             FeedPerRevolution
-        } feed_mode;
+        } feed_mode = FeedPerMinute;
         enum rpm_mode {
             ConstantSurfaceSpeed,
             RevolutionsPerMinute
-        } rpm_mode;
+        } rpm_mode = RevolutionsPerMinute;
+        enum dimension_mode {
+            AbsoluteCoordinates,
+            IncrementalCoordinates,
+        } dimension_mode = AbsoluteCoordinates;
+        int subsystem = 1;
+        std::map<std::string,double> variables;
     };
 
-    parse_node_gen(MachineParameters *param): param(param) {}
+    parse_node_gen(MachineParameters *param, const parse_node_p &block, const machine_state &machineState)
+        : param(param), root(block), state_base(machineState) {}
 
-    std::pair<std::string,machine_state> generate(parse_node_p block, machine_state machineState);
-    void traverse(parse_node_p node);
+    inline std::string generate() {return generate_internal().first;}
 
 protected:
     std::pair<std::string,machine_state> generate_internal();
-    bool rerun = false;
 
-    parse_node_p root;
-    MachineParameters *param;
-    machine_state state;
+    // Both generation and transformation
+    void updateState(machine_state * state, int gcode = -1, int mcode = -1) const;
 
-    std::string expr(parse_node_p n);
+    // Generation methods
+    std::pair<std::string,machine_state> generate_text() const;
+    std::string expr(const parse_node_p &n) const;
+
+    // Transformation methods
+    void transformTree();
+    std::vector<parse_node_p> squashTree(parse_node_p node);
     bool g(int code);
+    bool m(int code);
 
-    // General
     bool transform_coordinates(int code);
     bool feed_rpm(int code);
 
@@ -66,6 +79,12 @@ protected:
     // Threads (generate_g_settings.cpp)
 
     // Tools (generate_g_settings.cpp)
+
+    // Variables
+    parse_node_p root;
+    MachineParameters *param;
+    machine_state state_base;
+    machine_state transform_state;
 };
 
 }
