@@ -52,6 +52,7 @@ MachineParameters OkumaOSP_P300L::getParameters()
     // Variables
     param.subprograms.available_variables = {Token_OSPP300L_1};
     param.variables.available_variables = {Token_OSPP300L_1, Token_OSPP300L_2};
+    param.variables.variable_marker = {'V'};
 
     // Functions
     param.functions.unary = {{"NOT", f_not_b}, {"SIN", f_sine}, {"COS", f_cosine}, {"TAN", f_tangent},

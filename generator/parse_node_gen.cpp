@@ -1,11 +1,15 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <ranges>
 #include "parse_node_gen.h"
 #include "../brands/parameters.h"
 #include "../parser/parse_node.h"
 #include "../tokens/tokens.h"
 #include "../errors/errors.h"
+#include "../tokens/g_code_description.h"
+#include "../tokens/m_code_descriptions.h"
+#include "../tokens/parameter_descriptions.h"
 
 namespace NCParser {
 
@@ -16,6 +20,12 @@ namespace NCParser {
 std::pair<std::string, parse_node_gen::machine_state> parse_node_gen::generate_internal()
 {
     // Do all needed tree transformations
+#ifdef TESTING
+    if (root->type() == Token::list){
+        std::cout << "--Before transformation--" << std::endl;
+        printTree(root, std::cout);
+    }
+#endif
     transformTree();
 
     return generate_text();
@@ -27,6 +37,12 @@ std::pair<std::string, parse_node_gen::machine_state> parse_node_gen::generate_i
  */
 std::pair<std::string, parse_node_gen::machine_state> parse_node_gen::generate_text() const
 {
+#ifdef TESTING
+    if (root->type() == Token::list){
+        std::cout << "--After transformation--" << std::endl;
+        printTree(root, std::cout);
+    }
+#endif
     auto state = state_base;
 
     // If this node is only an expression, return it
@@ -39,6 +55,10 @@ std::pair<std::string, parse_node_gen::machine_state> parse_node_gen::generate_t
     int g_code = -1;
     for (auto &n : root->children()){
         switch (n->type()){
+        case Token::empty_line:
+            // Just ignore this and let the block end. Token is just placeholder to stop
+            // the block from being purged.
+            break;
         case Token::queueing:
             if (param->queueing.has_queueing && param->queueing.queueing_single_char){
                 ss << param->queueing.queueing_single_char;
@@ -121,9 +141,13 @@ std::pair<std::string, parse_node_gen::machine_state> parse_node_gen::generate_t
             break;
         case Token::left_over_data:
             std::cerr << (error{}).to_string();
+            ss << "(Parsing failed: " << n->stringValue() << ")";
             break;
         case Token::block_function:
             // TODO Implement
+            break;
+        case Token::block_delete:
+            ss << "/";
             break;
         case Token::parameter:
         {
@@ -150,17 +174,20 @@ std::pair<std::string, parse_node_gen::machine_state> parse_node_gen::generate_t
                 break;
             }
             ss << m;
-            ss << expr(n->getChild(0)) << " ";
+            if (n->childCount() && n->getChild(0)){
+                ss << expr(n->getChild(0)) << " ";
+            } else {
+                ss << " ";
+            }
         } break;
         case Token::prg_name:
             for (auto i : param->parameter.defaults){
                 if (i.second == param_prg_name){
-                    if (n->childCount()){
+                    if (n->childCount() && n->getChild(0)){
                         ss << i.first << expr(n->getChild(0));
                     } else {
                         ss << i.first << n->stringValue();
                     }
-
                     break;
                 }
             }
@@ -178,7 +205,7 @@ std::pair<std::string, parse_node_gen::machine_state> parse_node_gen::generate_t
         case Token::list:
         // Run recursively if root is not a block, or contains sublists of blocks
         {
-            auto r = parse_node_gen(param, n, state).generate_internal();
+            auto r = parse_node_gen(param, n, state).generate_text();
             state = r.second;
             ss << r.first; break;
         }
@@ -187,7 +214,9 @@ std::pair<std::string, parse_node_gen::machine_state> parse_node_gen::generate_t
             ss << expr(n);
         }
     }
-    ss << std::endl;
+    if (root->type() == Token::block){
+        ss << std::endl;
+    }
     return {ss.str(), state};
 }
 
@@ -204,11 +233,14 @@ std::pair<std::string, parse_node_gen::machine_state> parse_node_gen::generate_t
  */
 void parse_node_gen::transformTree()
 {
-    bool rerun = false; // Expect that tree is useable
+    if (root->type() != Token::list && root->type() != Token::block)
+        return;
 
     // Check for, and complete, transformations based on G- or M-code
     // Keep repeating this until no node contains a code causing a transformation
+    bool rerun;
     do {
+        rerun = false; // In case we encounter an error
         for (auto &n : root->children()){
             if (n->type() == Token::g_word){
                 if ((rerun = g(n->intValue())))
@@ -220,14 +252,27 @@ void parse_node_gen::transformTree()
         }
     } while (rerun);
 
-    // Squash unneccessary added tree depth
-    root = parse_node_p(new parse_node(Token::list, squashTree(root)));
-
-    // Check for unneccesary setting and resetting of the same function, like setting
-    // G90 and then immideately setting G91. Also remove empty blocks;
-    transform_state = state_base;
     std::vector<parse_node_p> newRoot;
-    for (auto &n : root->children()){
+    for (const auto &n : root->children()){
+        parse_node_gen sub_gen(param, n, state_base);
+        sub_gen.transformTree();
+        newRoot.push_back(sub_gen.root);
+    }
+
+        // Squash unneccessary added tree depth
+    newRoot = squashTree(newRoot);
+
+    // Check for unneccesary setting and resetting of the same function, like setting G90/G91
+    // when we already are in that state
+    transform_state = state_base;
+    auto lastRoot = std::move(newRoot);
+    newRoot.clear();
+    for (int i=0;i<lastRoot.size();i++){
+        const auto n = lastRoot.at(i);
+        if (n->type() != Token::block){
+            newRoot.push_back(n);
+            continue;
+        }
         auto childList = n->children();
         std::erase_if(childList, [this]<typename T>(const T &p){
             if (p->type() == Token::g_word && p->intValue() == g_absolute_dimension
@@ -239,24 +284,67 @@ void parse_node_gen::transformTree()
             }
             return false;
         });
+        for (const auto &n1 : childList){
+            if (n1->type() == Token::g_word && n1->intValue() == g_absolute_dimension){
+                transform_state.dimension_mode = machine_state::AbsoluteCoordinates;
+            } else if (n1->type() == Token::g_word && n1->intValue() == g_incremental_dimension){
+                transform_state.dimension_mode = machine_state::IncrementalCoordinates;
+            }
+        }
+        newRoot.push_back(std::make_shared<parse_node>(n, childList));
     }
-    auto childList = root->children();
-    std::erase_if(childList, [this]<typename T>(const T &p){
-        if (!p->childCount())
+    newRoot = squashTree(newRoot);
+
+    // Remove empty blocks
+    std::erase_if(newRoot, []<typename T>(const T &p){
+        if (!p->childCount() && p->type() == Token::block)
             return true;
         return false;
     });
+
+    // Remove pair of G-codes that contradict each other (e.g. G90/G91 right after each other)
+    std::vector<parse_node_p> newList;
+    for (int i=0;i<newRoot.size();i++){
+        if (i+1 >= newRoot.size()){
+            newList.push_back(newRoot.at(i));
+            break;
+        }
+        const auto n = newRoot.at(i);
+        const auto n1 = newRoot.at(i+1);
+        if (n->childCount() == 1 && n1->childCount() == 1
+            && n->getChild(0) && n1->getChild(0)
+            && n->getChild(0)->type() == Token::g_word
+            && n1->getChild(0)->type() == Token::g_word){
+            bool remove = false;
+            for (const auto &pair : std::vector<std::pair<int,int>> {
+                     {g_absolute_dimension, g_incremental_dimension},
+                     {g_constant_surface_speed, g_revolutions_per_minute},
+                     {g_feed_per_minute, g_feed_per_revolution},
+                }){
+                if ((n->getChild(0)->intValue() == pair.first
+                     && n1->getChild(0)->intValue() == pair.second)
+                    || (n->getChild(0)->intValue() == pair.second
+                        && n1->getChild(0)->intValue() == pair.first)){
+                    //std::cout << "True" << std::endl;
+                    remove = true;
+                    break;
+                }
+            }
+            if (!remove){
+                newList.push_back(n);
+            } else {
+                i++;
+            }
+        } else {
+            newList.push_back(n);
+        }
+    }
+    root = std::make_shared<parse_node>(root, newList);
 }
 
-/*!
- * \brief Recursively remove nested block lists, creating a flat list of blocks in the root node
- * \param node Root node to flatten from
- * \return A list of nodes extracted from the subtree
- */
-std::vector<parse_node_p> parse_node_gen::squashTree(parse_node_p node)
-{
+std::vector<parse_node_p> parse_node_gen::squashTree(std::vector<parse_node_p> nodes){
     std::vector<parse_node_p> result;
-    for (auto &n : node->children()){
+    for (auto &n : nodes){
         if (n->type() == Token::list){
             for (auto &n1 : squashTree(n)){
                 result.push_back(n1);
@@ -266,6 +354,16 @@ std::vector<parse_node_p> parse_node_gen::squashTree(parse_node_p node)
         }
     }
     return result;
+}
+
+/*!
+ * \brief Recursively remove nested block lists, creating a flat list of blocks in the root node
+ * \param node Root node to flatten from
+ * \return A list of nodes extracted from the subtree
+ */
+std::vector<parse_node_p> parse_node_gen::squashTree(parse_node_p node)
+{
+    return squashTree(node->children());
 }
 
 /*!
@@ -281,6 +379,8 @@ std::vector<parse_node_p> parse_node_gen::squashTree(parse_node_p node)
  */
 std::string parse_node_gen::expr(const parse_node_p &n) const
 {
+    if (!n)
+        return "";
     std::stringstream ss;
     static const auto get_func = [](const int v, const std::map<std::string,int> * m) -> std::string{
         for (auto &i : *m){
@@ -293,15 +393,19 @@ std::string parse_node_gen::expr(const parse_node_p &n) const
         return "";
     };
     const auto print_square = [&]<typename T>(const parse_node_p n, const T d){
-        ss << "[" << expr(n->getChild(0)) << " " << d << " " << expr(n->getChild(1)) << "]";
+        if (n->childCount() < 2 || (!n->getChild(0) || !n->getChild(1))){
+            ss << "[Error:faulty expression]";
+        } else {
+            ss << "[" << expr(n->getChild(0)) << " " << d << " " << expr(n->getChild(1)) << "]";
+        }
     };
 
     switch (n->type()){
     // Binary
     case Token::equals:
-        if (n->childCount() > 1){
+        if (n->childCount() > 1 && n->getChild(0) && n->getChild(1)){
             ss << expr(n->getChild(0)) << " = " << expr(n->getChild(1));
-        } else if (n->childCount() == 1){
+        } else if (n->childCount() == 1 && n->getChild(0)){
             ss << " = " << expr(n->getChild(0));
         }
         break;
@@ -309,7 +413,7 @@ std::string parse_node_gen::expr(const parse_node_p &n) const
     case Token::plus:
     case Token::minus:
     case Token::slash:
-        print_square(n, n->type()); break;
+        print_square(n, (char)n->type()); break;
     case Token::binary_functions:
         print_square(n, get_func(n->intValue(), &(param->functions.binary))); break;
     // Values
@@ -331,7 +435,7 @@ std::string parse_node_gen::expr(const parse_node_p &n) const
         } else {
             char def = indexIn(param->parameter.defaults, param_variable);
             if (def >= 0){
-                ss << param->parameter.defaults[def] << n->stringValue();
+                ss << def << n->stringValue();
             } else {
                 // TODO Handle regex defined variables
             }
@@ -346,7 +450,7 @@ std::string parse_node_gen::expr(const parse_node_p &n) const
         break;
     case Token::period:
     case Token::percent:
-        ss << n->type(); break;
+        ss << (char)n->type(); break;
     }
     return ss.str();
 }
@@ -669,83 +773,75 @@ bool parse_node_gen::transform_coordinates(int code)
     }
     if (!incremental_to_absolute && !radius_to_coord && !coord_to_radius)
         return false;
-    parse_node_p newRoot = parse_node_p{new parse_node(Token::list)};
-    parse_node_p newBlock = parse_node_p{new parse_node(Token::block)};
-    parse_node_p firstBlock = parse_node_p{new parse_node(Token::block)};
-    parse_node_p lastBlock = parse_node_p{new parse_node(Token::block)};
+    parse_node_p newRoot = std::make_shared<parse_node>(Token::list);
+    parse_node_p newBlock = std::make_shared<parse_node>(Token::block);
+    parse_node_p firstBlock = std::make_shared<parse_node>(Token::block);
+    parse_node_p lastBlock = std::make_shared<parse_node>(Token::block);
     double radius = 0, xc = 0, zc = 0;
-    for (auto &n : nodes){
-        if (n->type() == Token::n_word){
-            firstBlock->appendChild(n);
-        } else if (n->type() != Token::parameter){
-            newBlock->appendChild(n);
-        } else {
-            if (radius_to_coord){
-                if (n->intValue() == param_circle_radius){
-                    try {
-                        double x1, z1, x2 = std::numeric_limits<double>::min(),
-                            z2 = std::numeric_limits<double>::min();
-                        x1 = transform_state.axis_positions['X'];
-                        z1 = transform_state.axis_positions['Z'];
-                        for (auto &n2 : nodes){
-                            // TODO This all breaks if values are not simple numbers
-                            if (n->type() == Token::parameter && n->intValue() == param_x && n->childCount()){
-                                x2 = n->getChild(0)->doubleValue();
-                            } else if (n->type() == Token::parameter && n->intValue() == param_z && n->childCount()){
-                                z2 = n->getChild(0)->doubleValue();
-                            } else if (n->type() == Token::parameter && n->intValue() == param_incremental_x
-                                       && n->childCount()){
-                                x2 = n->getChild(0)->doubleValue() + x1;
-                            } else if (n->type() == Token::parameter && n->intValue() == param_incremental_z
-                                       && n->childCount()){
-                                z2 = n->getChild(0)->doubleValue() + z1;
-                            } else if (n->type() == Token::parameter && n->intValue() == param_circle_radius
-                                       && n->childCount()){
-                                radius = n->getChild(0)->doubleValue();
-                            }
+    for (const auto &n : nodes){
+        if (radius_to_coord){
+            if (n->intValue() == param_circle_radius){
+                try {
+                    double x1, z1, x2 = std::numeric_limits<double>::min(),
+                        z2 = std::numeric_limits<double>::min();
+                    x1 = transform_state.axis_positions['X'];
+                    z1 = transform_state.axis_positions['Z'];
+                    for (const auto &n2 : nodes){
+                        // TODO This all breaks if values are not simple numbers
+                        if (n2->type() == Token::parameter && n2->intValue() == param_x && n2->childCount()){
+                            x2 = n2->getChild(0)->doubleValue();
+                        } else if (n2->type() == Token::parameter && n2->intValue() == param_z && n2->childCount()){
+                            z2 = n2->getChild(0)->doubleValue();
+                        } else if (n2->type() == Token::parameter && n2->intValue() == param_incremental_x
+                                   && n2->childCount()){
+                            x2 = n2->getChild(0)->doubleValue() + x1;
+                        } else if (n2->type() == Token::parameter && n2->intValue() == param_incremental_z
+                                   && n2->childCount()){
+                            z2 = n2->getChild(0)->doubleValue() + z1;
+                        } else if (n2->type() == Token::parameter && n2->intValue() == param_circle_radius
+                                   && n2->childCount()){
+                            radius = n2->getChild(0)->doubleValue();
                         }
-                        double dx = x2 - x1;
-                        double dz = z2 - z1;
-                        double d = std::sqrt(dx*dx + dz*dz);
-                        if (d > 2*radius)
-                            throw std::domain_error("Circle impossible");
-                        double h = std::sqrt(radius*radius - (d/2)*(d/2));
-                        double ux = -dz / d;
-                        double uz = dx / d;
-                        double sign = (code == g_circular_interpolation_ccw) ? 1.0 : -1.0;
-                        xc = ((x1 + x2) / 2) + sign * h * ux;
-                        zc = ((z1 + z2) / 2) + sign * h * uz;
-                    } catch (std::exception e){
-                        newBlock->appendChild(n);
-                        std::cerr << error(error::Generating, -1, -1, e.what()).to_string();
                     }
-                } else {
+                    double dx = x2 - x1;
+                    double dz = z2 - z1;
+                    double d = std::sqrt(dx*dx + dz*dz);
+                    if (d > 2*radius)
+                        throw std::domain_error("Circle impossible");
+                    double h = std::sqrt(radius*radius - (d/2)*(d/2));
+                    double ux = -dz / d;
+                    double uz = dx / d;
+                    double sign = (code == g_circular_interpolation_ccw) ? 1.0 : -1.0;
+                    xc = ((x1 + x2) / 2) + sign * h * ux;
+                    zc = ((z1 + z2) / 2) + sign * h * uz;
+                } catch (std::exception e){
                     newBlock->appendChild(n);
+                    std::cerr << error(error::Generating, -1, -1, e.what()).to_string();
                 }
             }
-            if (coord_to_radius){
-                double x1 = transform_state.axis_positions['X'];
-                double z1 = transform_state.axis_positions['Z'];
-                for (auto &n2 : nodes){
-                    if (n->type() == Token::parameter && n->intValue() == param_circle_center_x && n->childCount()){
-                        xc = n->getChild(0)->doubleValue();
-                    } else if (n->type() == Token::parameter && n->intValue() == param_circle_center_z && n->childCount()){
-                        zc = n->getChild(0)->doubleValue();
-                    } else if (n->type() == Token::parameter && n->intValue() == param_circle_center_incr_x && n->childCount()){
-                        xc = n->getChild(0)->doubleValue() + x1;
-                    } else if (n->type() == Token::parameter && n->intValue() == param_circle_center_incr_x && n->childCount()){
-                        zc = n->getChild(0)->doubleValue() + z1;
-                    }
+        }
+        if (coord_to_radius){
+            double x1 = transform_state.axis_positions['X'];
+            double z1 = transform_state.axis_positions['Z'];
+            for (auto &n2 : nodes){
+                if (n2->type() == Token::parameter && n2->intValue() == param_circle_center_x && n2->childCount()){
+                    xc = n2->getChild(0)->doubleValue();
+                } else if (n2->type() == Token::parameter && n2->intValue() == param_circle_center_z && n2->childCount()){
+                    zc = n->getChild(0)->doubleValue();
+                } else if (n2->type() == Token::parameter && n2->intValue() == param_circle_center_incr_x && n2->childCount()){
+                    xc = n2->getChild(0)->doubleValue() + x1;
+                } else if (n2->type() == Token::parameter && n2->intValue() == param_circle_center_incr_x && n2->childCount()){
+                    zc = n2->getChild(0)->doubleValue() + z1;
                 }
-                radius = std::sqrt((x1+xc)*(x1+xc) + (z1+zc)*(z1+zc));
             }
+            radius = std::sqrt((x1+xc)*(x1+xc) + (z1+zc)*(z1+zc));
         }
     }
     auto appendChild = [&](int P, std::vector<parse_node_p> n){
-        newBlock->appendChild(parse_node_p{new parse_node(Token::parameter, P, n)});
+        newBlock->appendChild(std::make_shared<parse_node>(Token::parameter, P, n));
     };
-    for (auto &n : nodes){
-        if (incremental_to_absolute){
+    for (const auto &n : nodes){
+        if (incremental_to_absolute && n->type() == Token::parameter){
             switch (n->intValue()){
             case param_incremental_x:
                 appendChild(param_x, n->children()); continue;
@@ -759,32 +855,32 @@ bool parse_node_gen::transform_coordinates(int code)
                 appendChild(param_circle_center_z, n->children()); continue;
             }
         }
-        if (coord_to_radius){
+        if (coord_to_radius && n->type() == Token::parameter){
             switch (n->intValue()){
             case param_circle_center_x:
             case param_circle_center_z:
             case param_circle_center_incr_x:
             case param_circle_center_incr_z:
                 if (radius){
-                    appendChild(param_circle_radius, {parse_node_p(new parse_node(Token::num_float, radius))});
+                    appendChild(param_circle_radius, {std::make_shared<parse_node>(Token::num_float, radius)});
                     radius = 0;
                 }
                 continue;
             }
         }
-        if (radius_to_coord){
+        if (radius_to_coord && n->type() == Token::parameter){
             switch (n->intValue()){
             case param_circle_radius:
-                appendChild(param_circle_center_x, {parse_node_p(new parse_node(Token::num_float, xc))});
-                appendChild(param_circle_center_z, {parse_node_p(new parse_node(Token::num_float, zc))});
+                appendChild(param_circle_center_x, {std::make_shared<parse_node>(Token::num_float, xc)});
+                appendChild(param_circle_center_z, {std::make_shared<parse_node>(Token::num_float, zc)});
                 continue;
             }
         }
         newBlock->appendChild(n);
     }
     if (incremental_to_absolute && transform_state.dimension_mode == machine_state::AbsoluteCoordinates){
-        firstBlock->appendChild(parse_node_p{new parse_node(Token::g_word, g_incremental_dimension)});
-        lastBlock->appendChild(parse_node_p{new parse_node(Token::g_word, g_absolute_dimension)});
+        firstBlock->appendChild(std::make_shared<parse_node>(Token::g_word, g_incremental_dimension));
+        lastBlock->appendChild(std::make_shared<parse_node>(Token::g_word, g_absolute_dimension));
     }
     if (firstBlock->childCount() == 1 && firstBlock->type() == Token::n_word){
         newBlock->prependChild(firstBlock->getChild(0));
@@ -812,11 +908,11 @@ bool parse_node_gen::transform_coordinates(int code)
 bool parse_node_gen::feed_rpm(int code)
 {
     auto nodes = root->children();
-    for (auto n : nodes){
+    for (const auto &n : nodes){
         if (n->type() == Token::parameter){
             int param_type = n->intValue();
             bool found = false;
-            for (auto &m : {param->g[code].parameter_types, param->parameter.defaults}){
+            for (const auto &m : {param->g[code].parameter_types, param->parameter.defaults}){
                 for (auto &p : m){
                     if (p.second == param_type){
                         found = true;
@@ -829,32 +925,36 @@ bool parse_node_gen::feed_rpm(int code)
             for (int type : {param_feed, param_rpm}){
                 if (type != n->intValue())
                     continue;
-                parse_node_p newRoot = parse_node_p{new parse_node(Token::list)};
-                parse_node_p newBlock = parse_node_p{new parse_node(Token::block)};
+                parse_node_p newRoot = std::make_shared<parse_node>(Token::list);
+                parse_node_p newBlock = std::make_shared<parse_node>(Token::block);
                 std::variant<int,double,std::string> value;
-                for (auto n1 : nodes){
+                for (const auto &n1 : nodes){
                     if (n1 != n){
                         newBlock->appendChild(n1);
                     } else {
-                        switch (n1->getChild(0)->type()){
-                        case Token::string:
-                        case Token::num_literal:
-                            value = n1->getChild(0)->stringValue(); break;
-                        case Token::num_int:
-                            value = n1->getChild(0)->intValue(); break;
-                        case Token::num_float:
-                            value = n1->getChild(0)->doubleValue();
+                        if (n1->getChild(0)){
+                            switch (n1->getChild(0)->type()){
+                            case Token::string:
+                            case Token::num_literal:
+                                value = n1->getChild(0)->stringValue(); break;
+                            case Token::num_int:
+                                value = n1->getChild(0)->intValue(); break;
+                            case Token::num_float:
+                                value = n1->getChild(0)->doubleValue();
+                            }
+                        } else {
+                            value = 0;
                         }
                     }
                 }
                 auto addNodes = [&]<int T>(int P, int G){
                     newRoot->appendChildren({
-                        parse_node_p{new parse_node(Token::block, {
-                            parse_node_p{new parse_node(Token::g_word, G)},
-                            parse_node_p{new parse_node(Token::parameter, P, {
-                                parse_node_p(new parse_node(Token::num_int+T, std::get<T>(value)))
+                        std::make_shared<parse_node>(Token::block, std::vector<parse_node_p>{
+                            std::make_shared<parse_node>(Token::g_word, G),
+                            std::make_shared<parse_node>(Token::parameter, P, std::vector<parse_node_p>{
+                                std::make_shared<parse_node>(Token::num_int+T, std::get<T>(value))
                             })}
-                        })},
+                        ),
                         newBlock
                     });
                 };
@@ -915,6 +1015,62 @@ void parse_node_gen::updateState(machine_state *state, int gcode, int mcode) con
     switch (mcode){
     case -1:
         return;
+    }
+}
+
+/*!
+ * \brief Testing and debugging function for printing the an parse tree before output text is generated
+ * \param rootNode The node printing starts from
+ * \param stream Output stream to send data to (e.g. std::cout)
+ * \param tabs Used internally for adding tab depth, can be set to left adjust the entire output
+ * \param tab_size the amount to indent nodes relative to their parent. Values less than 2 is treated as 2.
+ */
+void parse_node_gen::printTree(parse_node_p rootNode, std::ostream &stream, uint tabs, uint tab_size) const
+{
+    if (tab_size < 2)
+        tab_size = 2;
+    if (tabs > 0){
+        for ([[maybe_unused]] const uint i : std::ranges::views::iota((uint)1, tabs)){
+            stream << std::string(tab_size, ' ');
+        }
+        stream << std::string(tab_size-2, ' ') << "⤷ ";
+    }
+    if (rootNode){
+        stream << getTokenName(rootNode->type());
+    } else {
+        stream << "nullptr";
+    }
+    if (rootNode->hasValue()){
+        stream << " ➞ ";
+        switch (rootNode->valueType()){
+        case 0:
+        {
+            std::string value;
+            if (rootNode->type() == Token::g_word){
+                std::string_view name = g_code_name((GCodesAvailable)rootNode->intValue());
+                stream << "Type: "
+                       << (name.empty() ? std::to_string(rootNode->intValue()) : name);
+            } else if (rootNode->type() == Token::m_word){
+                std::string_view name = m_code_name((MCodesAvailable)rootNode->intValue());
+                stream << "Type: "
+                       << (name.empty() ? std::to_string(rootNode->intValue()) : name);
+            } else if (rootNode->type() == Token::parameter){
+                std::string_view name = parameter_name((ParameterType)rootNode->intValue());
+                stream << "Type: "
+                       << (name.empty() ? std::to_string(rootNode->intValue()) : name);
+            } else {
+                stream << "Int: " << rootNode->stringValue();
+            }
+        } break;
+        case 1:
+            stream << "Float: " << rootNode->stringValue(); break;
+        case 2:
+            stream << "String: \"" << rootNode->stringValue() << "\""; break;
+        }
+    }
+    stream << std::endl;
+    for (const auto &child : rootNode->children()){
+        printTree(child, stream, tabs+1);
     }
 }
 

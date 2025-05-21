@@ -1,6 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include <optional>
 #include <string>
 #include <set>
 #include <variant>
@@ -13,40 +14,47 @@ class lexer
 public:
     lexer();
 
-    void init(std::string text, std::set<std::string> allowed_multiletters = {});
+    void init(std::string text, std::set<std::string_view> allowed_multiletters = {});
     int next();
-    int finish_line();
-    int finish_comment(char end = ')');
+    void finish_line();
+    void finish_comment(char end = ')');
 
-    int int_value() const;
-    double double_value() const;
-    std::string string_value() const;
-    int line() const{
+    [[nodiscard]] int int_value() const;
+    [[nodiscard]] double double_value() const;
+    [[nodiscard]] std::string string_value() const;
+    [[nodiscard]] int line() const{
         return m_line;
     }
-    int pos() const{
+    [[nodiscard]] int pos() const{
         return m_pos-1;
     }
-    std::string position() const{
+    [[nodiscard]] std::string position() const{
         return std::to_string(m_line)+", "+std::to_string(m_pos);
     }
-    error last_error() const{
+    [[nodiscard]] error last_error() const{
         return m_last_error;
     }
 
-protected:
-    virtual int tokenizedReturn(int r) {return r;}; // Just used for unit tests
-    char peek(bool single = false) const;
-    std::string grabInt(int offset = 0);
-    int getCode(int token);
+    [[nodiscard]] bool hasValue(){
+        return vValue.has_value();
+    }
 
-    std::variant<int,double,std::string> vValue;
+protected:
+    [[nodiscard]] virtual int tokenizedReturn(int r) {return r;}; // Just used for unit tests
+    [[nodiscard]] char peek(bool acceptWhitespace = false) const;
+    [[nodiscard]] std::string grabInt(int offset = 0);
+    [[nodiscard]] int getCode(int token);
+    [[nodiscard]] std::string checkML(char next);
+
+    std::optional<std::variant<int,double,std::string>> vValue;
 
     std::string text;
-    std::set<std::string> multiletter;
+    std::set<std::string_view> multiletter;
     int m_pos = 0;
     int m_line;
     error m_last_error;
+    char m_last;
+    char m_next = '\0';
 };
 
 };

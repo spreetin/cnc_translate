@@ -14,11 +14,12 @@ enum Controllers {
 };
 
 enum Manufacturers {
+    UnknownBrand,
     Traub,
     Index,
     Citizen,
     Star,
-    Okuma,
+    Okuma
 };
 
 };

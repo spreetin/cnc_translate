@@ -1,15 +1,15 @@
 #ifndef G_CODE_DESCRIPTION_H
 #define G_CODE_DESCRIPTION_H
 
-#include <string>
+#include <string_view>
 #include "g_codes.h"
 
 namespace NCParser {
 
-const std::string g_code_name(GCodesAvailable code){
+static constexpr std::string_view g_code_name(GCodesAvailable code){
     switch (code){
-    case auto_geometry_function:
-        return "";
+    case g_auto_geometry_function:
+        return "Machine macro function";
     case g_absolute_dimension:
         return "Absolute dimension";
     case g_bevel_cycle_against_spindle:
@@ -69,9 +69,9 @@ const std::string g_code_name(GCodesAvailable code){
     case g_dwell:
         return "Dwell (pause)";
     case g_exact_stop:
-        return "";
+        return "Exact stop";
     case g_exact_stop_block:
-        return "";
+        return "Exact stop for block";
     case g_feed_correction:
         return "Feed correction ON";
     case g_feed_correction_off:
@@ -192,6 +192,30 @@ const std::string g_code_name(GCodesAvailable code){
         return "ZX plane selection";
     case g_zy_plane_selection:
         return "ZY plane selection";
+    case g_use_subsystem_a:
+        return "Use first subsystem";
+    case g_use_subsystem_b:
+        return "Use second subsystem";
+    case g_use_subsystem_c:
+        return "Use third subsystem";
+    case g_use_subsystem_d:
+        return "Use fourth subsystem";
+    case g_coordinate_cartesian_to_polar:
+        return "";
+    case g_coordinate_cartesian_to_polar_off:
+        return "";
+    case g_milling_tool_compensation_cancel:
+        return "";
+    case g_milling_tool_compensation_left:
+        return "";
+    case g_milling_tool_compensation_right:
+        return "";
+    case g_turning_mode:
+        return "Turning mode";
+    case g_c_axis_mode:
+        return "C-axis mode";
+    case g_y_axis_mode:
+        return "Y-axis mode";
     }
     return "";
 }

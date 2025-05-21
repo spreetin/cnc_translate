@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include "../macros/contracts.h"
 
 namespace NCParser {
 
@@ -58,6 +59,7 @@ protected:
     // Transformation methods
     void transformTree();
     std::vector<parse_node_p> squashTree(parse_node_p node);
+    std::vector<parse_node_p> squashTree(std::vector<parse_node_p> nodes);
     bool g(int code);
     bool m(int code);
 
@@ -85,6 +87,9 @@ protected:
     MachineParameters *param;
     machine_state state_base;
     machine_state transform_state;
+
+    // Only for testing, not for production
+    void printTree(parse_node_p rootNode, std::ostream & stream, uint tabs = 0, uint tab_size = 4) const EXPECTS(tab_size >= 2);
 };
 
 }

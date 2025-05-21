@@ -20,7 +20,7 @@ TEST_F(Parser, init){
 }
 
 TEST_F(Parser, morefuncs){
-    auto p1 = parse_node_p{new parse_node(Token::num_int)};
+    auto p1 = std::make_shared<parse_node>(Token::num_int);
     m_lexer->init("EQ 2", allowed_multiletter);
     next = m_lexer->next();
     auto p2 = morefuncs(p1);
@@ -76,7 +76,7 @@ TEST_F(Parser, func_variable){
 }
 
 TEST_F(Parser, morefactors){
-    auto p1 = parse_node_p{new parse_node(Token::num_int, 100)};
+    auto p1 = std::make_shared<parse_node>(Token::num_int, 100);
     m_lexer->init(" * 45", allowed_multiletter);
     next = m_lexer->next();
     auto p2 = morefactors(p1);
@@ -104,7 +104,7 @@ TEST_F(Parser, factor){
 }
 
 TEST_F(Parser, moreterms){
-    auto p1 = parse_node_p{new parse_node(Token::num_int, 100)};
+    auto p1 = std::make_shared<parse_node>(Token::num_int, 100);
     m_lexer->init(" - 45", allowed_multiletter);
     next = m_lexer->next();
     auto p2 = moreterms(p1);

@@ -66,6 +66,7 @@ namespace NCParser {
         static const int string = 203;
 
         // Abstract functions
+        static const int empty_line = 244;
         static const int subsystem_select = 245;
         static const int block_delete = 246;
         static const int queueing_num = 247;
@@ -87,6 +88,81 @@ namespace NCParser {
         static const int block = 263;
         static const int list = 264;
     };
+
+    constexpr std::string_view getTokenName(int token){
+        switch (token){
+        case '\n': return "newline";
+        case '%': return "percent";
+        case '(': return "leftparen";
+        case ')': return "rightparen";
+        case '*': return "star";
+        case '+': return "plus";
+        case ',': return "comma";
+        case '-': return "minus";
+        case '.': return "period";
+        case '/': return "slash";
+        case ':': return "comma";
+        case '=': return "equals";
+        case '[': return "leftsquare";
+        case ']': return "rightsquare";
+        case '!': return "bang";
+        case ';': return "semicolon";
+        case '$': return "dollar";
+        case 'A': return "a_word";
+        case 'B': return "b_word";
+        case 'C': return "c_word";
+        case 'D': return "d_word";
+        case 'E': return "e_word";
+        case 'F': return "f_word";
+        case 'G': return "g_word";
+        case 'H': return "h_word";
+        case 'I': return "i_word";
+        case 'J': return "j_word";
+        case 'K': return "k_word";
+        case 'L': return "l_word";
+        case 'M': return "m_word";
+        case 'N': return "n_word";
+        case 'O': return "o_word";
+        case 'P': return "p_word";
+        case 'Q': return "q_word";
+        case 'R': return "r_word";
+        case 'S': return "s_word";
+        case 'T': return "t_word";
+        case 'U': return "u_word";
+        case 'V': return "v_word";
+        case 'W': return "w_word";
+        case 'X': return "x_word";
+        case 'Y': return "y_word";
+        case 'Z': return "z_word";
+        case 200: return "num_literal";
+        case 201: return "num_int";
+        case 202: return "num_float";
+        case 203: return "string";
+        case 244: return "empty_line";
+        case 245: return "subsystem_select";
+        case 246: return "block_delete";
+        case 247: return "queueing_num";
+        case 248: return "queueing";
+        case 249: return "unkown_function";
+        case 250: return "left_over_data";
+        case 251: return "unary_function";
+        case 252: return "binary_functions";
+        case 253: return "multary_functions";
+        case 254: return "block_function";
+        case 255: return "parameter";
+        case 256: return "multi_letter";
+        case 257: return "prg_name";
+        case 258: return "variable";
+        case 259: return "comment";
+        case 260: return "unknown_code";
+        case 261: return "error";
+        case 262: return "done";
+        case 263: return "block";
+        case 264: return "list";
+        default:
+            return &"illegal_token: " [ (char)token];
+        }
+    }
 
     enum Duration {
         DDFC,

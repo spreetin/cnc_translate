@@ -9,7 +9,11 @@ class Lexer : public NCParser::lexer, public testing::Test{
 protected:
     int tokenizedReturn(int r) override {
         tokenized.push_back(r);
-        values.push_back(vValue);
+        if (vValue.has_value()){
+            values.push_back(vValue.value());
+        } else {
+            values.push_back(0);
+        }
         return r;
     };
 
@@ -19,6 +23,11 @@ protected:
 
 TEST_F(Lexer, init){
     init("G100", {"EQ", "NE"});
+}
+
+TEST_F(Lexer, empty_line){
+    init("\n\n");
+    EXPECT_EQ(next(), NCParser::Token::empty_line);
 }
 
 TEST_F(Lexer, words){
@@ -44,14 +53,14 @@ TEST_F(Lexer, numbers){
 }
 
 TEST_F(Lexer, multiline){
-    init("G100 EQ 100 NE FAIL", {"EQ", "NE"});
+    init("G100 EQ 100 NE FAIL", {"EQ", "NE", "FAIL"});
     next();
     EXPECT_EQ(next(), NCParser::Token::multi_letter);
     EXPECT_EQ(string_value(), "EQ");
     next();
     EXPECT_EQ(next(), NCParser::Token::multi_letter);
     EXPECT_EQ(string_value(), "NE");
-    EXPECT_EQ(next(), NCParser::Token::unknown_function);
+    EXPECT_EQ(next(), NCParser::Token::multi_letter);
     EXPECT_EQ(string_value(), "FAIL");
     EXPECT_EQ(next(), NCParser::Token::done);
 }

@@ -14,7 +14,7 @@ add_executable(
 
 target_link_libraries(
     cnc_translate
-    cnc_parse
+    cnc_parse_static
 )
 
 set(
@@ -48,21 +48,42 @@ set(
     generator/generate_g_tools.cpp
     generator/generate_g_settings.cpp
     generator/generate_g_cutting.cpp
+    tokens/parameter_descriptions.h
+    macros/contracts.h
 
     # Compile time regular expressions library
     ctre/ctre.hpp ctre/ctre-unicode.hpp ctre/unicode-db.hpp
 )
 
 add_library (
-    cnc_parse
+    cnc_parse_internal
+    OBJECT
     ${common_src}
 )
+
+set_property(
+    TARGET cnc_parse_internal
+    PROPERTY POSITION_INDEPENDENT_CODE 1
+)
+
+add_library (
+    cnc_parse_shared
+    SHARED
+    $<TARGET_OBJECTS:cnc_parse_internal>
+)
+add_library (
+    cnc_parse_static
+    STATIC
+    $<TARGET_OBJECTS:cnc_parse_internal>
+)
+
 add_library (
     cnc_parse_test
     ${common_src}
 )
 
 add_subdirectory(tests)
+add_subdirectory(cnc_gui)
 
 set_target_properties(cnc_parse_test PROPERTIES COMPILE_FLAGS "-DTESTING")
 

@@ -1,5 +1,6 @@
 #include <sstream>
 #include "generator.h"
+#include "../brands/machine_definitions.h"
 #include "../brands/definition_base.h"
 #include "../generator/parse_node_gen.h"
 
@@ -11,6 +12,16 @@ generator::generator(Manufacturers manufacturer, std::string_view machine) {
     auto topLayer = std::unique_ptr<definition_base>(MachineDefinitions::getDefinition(manufacturer, machine));
     if (topLayer){
         param = topLayer->getParameters();
+    }
+    allowed_multiletter.clear();
+    for (auto &item : param.functions.unary){
+        allowed_multiletter.insert(item.first);
+    }
+    for (auto &item : param.functions.binary){
+        allowed_multiletter.insert(item.first);
+    }
+    for (auto &item : param.functions.block){
+        allowed_multiletter.insert(item.first);
     }
 }
 

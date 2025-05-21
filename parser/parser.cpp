@@ -1,6 +1,8 @@
 #include "parser.h"
 #include "../brands/machine_definitions.h"
 #include <iostream>
+#include <memory>
+#include "parse_node.h"
 #include "../tokens/tokens.h"
 
 namespace NCParser {
@@ -68,6 +70,7 @@ void parser::match(int code)
         if (next == Token::error || next == Token::unknown_function || next == Token::unknown_code){
             errors.push_back(m_lexer->last_error());
             std::cerr << m_lexer->last_error().to_string() << std::endl;
+            match(next);
         }
     }
 }
@@ -88,9 +91,16 @@ std::vector<parse_node_p> parser::list()
 {
     std::vector<parse_node_p> blocks;
     while (next != Token::done){
-        auto b = block();
-        if (b)
-            blocks.push_back(b);
+        if (next == Token::empty_line){
+            blocks.push_back(std::make_shared<parse_node>(Token::block,
+                std::vector<parse_node_p>{std::make_shared<parse_node>(Token::empty_line)}
+            ));
+            match(Token::empty_line);
+        } else {
+            auto b = block();
+            if (b)
+                blocks.push_back(b);
+        }
     }
     return blocks;
 }
@@ -103,23 +113,23 @@ parse_node_p parser::block()
      * N -> G -> parameters -> M
      * The order of parameters are accepted even when they would be wrong according to the standard.
      */
-    auto rowItem = parse_node_p{new parse_node(Token::block)};
+    auto rowItem = std::make_shared<parse_node>(Token::block);
     if (next == Token::slash){
         match(Token::slash);
-        rowItem->appendChild(parse_node_p{new parse_node(Token::block_delete)});
+        rowItem->appendChild(std::make_shared<parse_node>(Token::block_delete));
     }
     if (next == Token::n_word){
         std::string blockNum = m_lexer->string_value();
         match(Token::n_word);
-        rowItem->appendChild(parse_node_p{new parse_node(Token::n_word, blockNum)});
+        rowItem->appendChild(std::make_shared<parse_node>(Token::n_word, blockNum));
     }
     if (next == Token::percent){
         match(Token::percent);
-        rowItem->appendChild(parse_node_p{new parse_node(Token::percent)});
+        rowItem->appendChild(std::make_shared<parse_node>(Token::percent));
     }
     if (param.parameter.defaults[next] == param_prg_name){
         match(next);
-        rowItem->appendChild(parse_node_p{new parse_node(Token::prg_name, {expr()})});
+        rowItem->appendChild(std::make_shared<parse_node>(Token::prg_name, std::vector<parse_node_p>{expr()}));
     }
     if (next == param.subsystem.symbol){
         if (next == Token::g_word){
@@ -127,26 +137,26 @@ parse_node_p parser::block()
             if (param.g.contains(g_use_subsystem_a)
                         && std::get<int>(param.g[g_use_subsystem_a].word) == code){
                 match(Token::g_word);
-                rowItem->appendChild(parse_node_p{new parse_node(Token::subsystem_select, 1)});
+                rowItem->appendChild(std::make_shared<parse_node>(Token::subsystem_select, 1));
             } else  if (param.g.contains(g_use_subsystem_b)
                         && std::get<int>(param.g[g_use_subsystem_b].word) == code){
                 match(Token::g_word);
-                rowItem->appendChild(parse_node_p{new parse_node(Token::subsystem_select, 2)});
+                rowItem->appendChild(std::make_shared<parse_node>(Token::subsystem_select, 2));
             } else  if (param.g.contains(g_use_subsystem_c)
                        && std::get<int>(param.g[g_use_subsystem_c].word) == code){
                 match(Token::g_word);
-                rowItem->appendChild(parse_node_p{new parse_node(Token::subsystem_select, 3)});
+                rowItem->appendChild(std::make_shared<parse_node>(Token::subsystem_select, 3));
             } else  if (param.g.contains(g_use_subsystem_d)
                        && std::get<int>(param.g[g_use_subsystem_d].word) == code){
                 match(Token::g_word);
-                rowItem->appendChild(parse_node_p{new parse_node(Token::subsystem_select, 4)});
+                rowItem->appendChild(std::make_shared<parse_node>(Token::subsystem_select, 4));
             }
         } else {
             match(next);
             if (next == Token::num_literal){
                 int num = m_lexer->int_value();
                 match(Token::num_literal);
-                rowItem->appendChild(parse_node_p{new parse_node(Token::subsystem_select, num)});
+                rowItem->appendChild(std::make_shared<parse_node>(Token::subsystem_select, num));
             }
         }
     }
@@ -164,8 +174,8 @@ parse_node_p parser::block()
                 }
                 blocks.push_back(block());
             }
-            rowItem->appendChild(parse_node_p{new parse_node(Token::block_function,
-                                                                            block_definition.type, blocks)});
+            rowItem->appendChild(std::make_shared<parse_node>(Token::block_function,
+                                                                            block_definition.type, blocks));
         } else {
             match(Token::multi_letter);
         }
@@ -189,15 +199,18 @@ parse_node_p parser::block()
         int code = m_lexer->int_value();
         match(Token::m_word);
         if (active_m_numbers.contains(code)){
-            rowItem->appendChild(parse_node_p{new parse_node(Token::m_word, active_m_numbers.at(code))});
+            rowItem->appendChild(std::make_shared<parse_node>(Token::m_word, active_m_numbers.at(code)));
         }
     }
-    if (param.comments.use_parenthesis && next == Token::leftparen
-        || param.comments.use_semicolon && next == Token::semicolon){
+    if ((param.comments.use_parenthesis && next == Token::leftparen)
+        || (param.comments.use_semicolon && next == Token::semicolon)){
         rowItem->appendChild(comment());
     }
     if (next == Token::newline){
         match(Token::newline);
+        return rowItem;
+    } else if (next == Token::empty_line){
+        return rowItem;
     } else if (next != Token::done){
         /*
          * These are pieces of data in the block that shouldn't be there.
@@ -205,12 +218,13 @@ parse_node_p parser::block()
          * It is also possible that valid data ends up here, if the order of operations is wrong.
          * I.e. M-codes are written before G-codes.
          */
-        next = m_lexer->finish_line();
+        m_lexer->finish_line();
         if (next == Token::error || next == Token::unknown_function || next == Token::unknown_code){
             errors.push_back(m_lexer->last_error());
             std::cerr << m_lexer->last_error().to_string() << std::endl;
         }
-        rowItem->appendChild(parse_node_p{new parse_node(Token::left_over_data, m_lexer->string_value())});
+        rowItem->appendChild(std::make_shared<parse_node>(Token::left_over_data, m_lexer->string_value()));
+        next = m_lexer->next();
     }
     return rowItem;
 }
@@ -226,19 +240,20 @@ parse_node_p parser::assignment()
     auto var = variable();
     if (next == Token::equals){
         match(Token::equals);
-        return parse_node_p{new parse_node(Token::equals, std::vector<parse_node_p>{var, expr()})};
+        return std::make_shared<parse_node>(Token::equals, std::vector<parse_node_p>{var, expr()});
     }
     return var;
 }
 
 parse_node_p parser::variable()
 {
+    // TODO Handle more types of variables
     match(next);
     if (next != Token::num_literal)
-        return parse_node_p{new parse_node(Token::variable, -1)};
+        return std::make_shared<parse_node>(Token::variable, -1);
     int val = m_lexer->int_value();
     match(Token::num_literal);
-    return parse_node_p{new parse_node(Token::variable, val)};
+    return std::make_shared<parse_node>(Token::variable, val);
 }
 
 parse_node_p parser::number()
@@ -259,18 +274,18 @@ parse_node_p parser::number()
                 match(Token::num_literal);
             }
         }
-        return parse_node_p{new parse_node(Token::num_literal, first_part)};
+        return std::make_shared<parse_node>(Token::num_literal, first_part);
     } else if (next == Token::period){
         match(Token::period);
         if (next != Token::num_literal)
-            return parse_node_p{new parse_node(Token::num_int, std::stoi(first_part))};
+            return std::make_shared<parse_node>(Token::num_int, std::stoi(first_part));
         std::string second_part = m_lexer->string_value();
         match(Token::num_literal);
         double value = stod(first_part + '.' + second_part);
-        return parse_node_p{new parse_node(Token::num_float, value)};
+        return std::make_shared<parse_node>(Token::num_float, value);
     } else {
         try {
-            return parse_node_p{new parse_node(Token::num_int, std::stoi(first_part))};
+            return std::make_shared<parse_node>(Token::num_int, std::stoi(first_part));
         } catch (std::invalid_argument){
             error err {error::Parsing, m_lexer->line(), m_lexer->pos(),
                       "Number parse error on string: \"" + first_part + "\""};
@@ -302,7 +317,7 @@ std::vector<parse_node_p> parser::g(bool continuingWord)
         }
         int g_type = active_g_numbers.at(code);
         auto def = param.g[g_type];
-        nodes.push_back(parse_node_p{new parse_node(Token::g_word, g_type)});
+        nodes.push_back(std::make_shared<parse_node>(Token::g_word, g_type));
         while (def.parameters.contains(next)){
             int param_type;
             std::vector<int> sub_types;
@@ -318,7 +333,7 @@ std::vector<parse_node_p> parser::g(bool continuingWord)
             }
             match(next);
             parse_node_p e = grabParameterData(sub_types);
-            nodes.push_back(parse_node_p{new parse_node(Token::parameter, param_type, {e})});
+            nodes.push_back(std::make_shared<parse_node>(Token::parameter, param_type, std::vector<parse_node_p>{e}));
         }
     }
     return nodes;
@@ -330,13 +345,13 @@ parse_node_p parser::grabParameterData(std::vector<int> sub_types)
     if (next == Token::equals){
         match(Token::equals);
         l = expr();
-        return parse_node_p{new parse_node(Token::equals, std::vector<parse_node_p>{l})};
+        return std::make_shared<parse_node>(Token::equals, std::vector<parse_node_p>{l});
     } else {
         l = expr();
         if (sub_types.size() > 1 && next == Token::equals){
             match(Token::equals);
             parse_node_p r = expr();
-            return parse_node_p{new parse_node(Token::equals, std::vector<parse_node_p>{l, r})};
+            return std::make_shared<parse_node>(Token::equals, std::vector<parse_node_p>{l, r});
         } else {
             return l;
         }
@@ -349,15 +364,16 @@ parse_node_p parser::comment()
     char end_char = ')';
     if (init_char == '(')
         end_char = ')';
-    next = m_lexer->finish_comment(end_char);
+    m_lexer->finish_comment(end_char);
     if (next == Token::error || next == Token::unknown_function || next == Token::unknown_code){
         errors.push_back(m_lexer->last_error());
         std::cerr << m_lexer->last_error().to_string() << std::endl;
     }
     std::string comment_text = m_lexer->string_value();
+    next = m_lexer->next();
     if (next == end_char)
         match(next);
-    return parse_node_p{new parse_node(Token::comment, comment_text)};
+    return std::make_shared<parse_node>(Token::comment, comment_text);
 }
 
 parse_node_p parser::term()
@@ -372,7 +388,7 @@ parse_node_p parser::moreterms(parse_node_p left)
     if (ops.contains(next)){
         int op = next;
         match(op);
-        auto p = parse_node_p{new parse_node(op, std::vector<parse_node_p>{left, term()})};
+        auto p = std::make_shared<parse_node>(op, std::vector<parse_node_p>{left, term()});
         return moreterms(p);
     } else {
         return left;
@@ -391,7 +407,7 @@ parse_node_p parser::morefactors(parse_node_p left)
     if (ops.contains(next)){
         int op = next;
         match(op);
-        auto p = parse_node_p{new parse_node(op, std::vector<parse_node_p>{left, factor()})};
+        auto p = std::make_shared<parse_node>(op, std::vector<parse_node_p>{left, factor()});
         return morefactors(p);
     } else {
         return left;
@@ -418,12 +434,12 @@ parse_node_p parser::func()
             e->setValue("+" + e->stringValue());
             return e;
         } else {
-            return parse_node_p(new parse_node(t, {e}));
+            return std::make_shared<parse_node>(t, std::vector<parse_node_p>{e});
         }
     } else if (next == Token::num_literal){
         return morefuncs(number());
     } else if (next == Token::string){
-        return morefuncs(parse_node_p{new parse_node(Token::string, m_lexer->string_value())});
+        return morefuncs(std::make_shared<parse_node>(Token::string, m_lexer->string_value()));
     } else if (next == Token::leftsquare){
         match(Token::leftsquare);
         auto p = expr();
@@ -433,14 +449,21 @@ parse_node_p parser::func()
         std::string t = m_lexer->string_value();
         if (param.functions.unary.contains(t)){
             match(Token::multi_letter);
-            return morefuncs(parse_node_p{new parse_node(Token::unary_function, param.functions.unary[t], {expr()})});
+            return morefuncs(std::make_shared<parse_node>(Token::unary_function, param.functions.unary[t], std::vector<parse_node_p>{expr()}));
         }
     } else if (param.variables.variable_marker.contains(next)){
+        // TODO handle more types of variables
         return morefuncs(variable());
     }
-    error err {error::Parsing, m_lexer->line(), m_lexer->pos(),
-              "Expression non-parseable. Token: " + std::to_string(next) + " Variable: "
-                  + m_lexer->string_value()};
+    error err;
+    if (m_lexer->hasValue()){
+        err = {error::Parsing, m_lexer->line(), m_lexer->pos(),
+                  "Expression non-parseable. Token: " + std::to_string(next) + " Variable: "
+                      + m_lexer->string_value()};
+    } else {
+        err = {error::Parsing, m_lexer->line(), m_lexer->pos(),
+                  "Expression non-parseable. Token: " + std::to_string(next) + " Variable: N/A"};
+    }
     errors.push_back(err);
     std::cerr << err.to_string() << std::endl;
     return nullptr;
@@ -452,7 +475,7 @@ parse_node_p parser::morefuncs(parse_node_p left)
         std::string t = m_lexer->string_value();
         if (param.functions.binary.contains(t)){
             match(Token::multi_letter);
-            return parse_node_p{new parse_node(Token::binary_functions, param.functions.binary[t], {left, expr()})};
+            return std::make_shared<parse_node>(Token::binary_functions, param.functions.binary[t], std::vector<parse_node_p>{left, expr()});
         }
     }
     return left;

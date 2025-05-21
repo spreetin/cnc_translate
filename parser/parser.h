@@ -22,8 +22,16 @@ public:
 
     bool parse(std::string text);
 
-    parse_node_p result(){
-        return parse_node_p{new parse_node(Token::list, m_result)};
+    [[nodiscard]] parse_node_p result(){
+        return std::make_shared<parse_node>(Token::list, m_result);
+    }
+
+    [[nodiscard]] MachineParameters & getParam(){
+        return param;
+    }
+
+    [[nodiscard]] std::set<std::string_view> getMultiletter(){
+        return allowed_multiletter;
     }
 
 protected:
@@ -32,26 +40,26 @@ protected:
     void match(int code);
 
     void start();
-    std::vector<parse_node_p> list();
-    parse_node_p block();
-    parse_node_p expr();
-    parse_node_p assignment();
-    parse_node_p variable();
-    parse_node_p number();
-    std::vector<parse_node_p> g(bool continuingWord = false);
-    parse_node_p grabParameterData(std::vector<int> sub_types);
-    parse_node_p comment();
+    [[nodiscard]] std::vector<parse_node_p> list();
+    [[nodiscard]] parse_node_p block();
+    [[nodiscard]] parse_node_p expr();
+    [[nodiscard]] parse_node_p assignment();
+    [[nodiscard]] parse_node_p variable();
+    [[nodiscard]] parse_node_p number();
+    [[nodiscard]] std::vector<parse_node_p> g(bool continuingWord = false);
+    [[nodiscard]] parse_node_p grabParameterData(std::vector<int> sub_types);
+    [[nodiscard]] parse_node_p comment();
 
     // Math expression parsing
-    parse_node_p term();
-    parse_node_p moreterms(parse_node_p left);
-    parse_node_p factor();
-    parse_node_p morefactors(parse_node_p left);
-    parse_node_p func();
-    parse_node_p morefuncs(parse_node_p left);
+    [[nodiscard]] parse_node_p term();
+    [[nodiscard]] parse_node_p moreterms(parse_node_p left);
+    [[nodiscard]] parse_node_p factor();
+    [[nodiscard]] parse_node_p morefactors(parse_node_p left);
+    [[nodiscard]] parse_node_p func();
+    [[nodiscard]] parse_node_p morefuncs(parse_node_p left);
 
     std::map<int,std::variant<int,double>> values;
-    std::set<std::string> allowed_multiletter;
+    std::set<std::string_view> allowed_multiletter;
     std::map<int,int> active_g_numbers;
     std::map<int,int> active_m_numbers;
 
