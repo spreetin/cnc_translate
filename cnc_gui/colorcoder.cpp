@@ -1,7 +1,7 @@
 #include "colorcoder.h"
 
 const QVector<ISOHighlighter::HighlightingRule> ISOHighlighter::rules = {
-    {QRegularExpression("[ABCDEFGHIJKMNOPQRSTUVWXYZ]", QRegularExpression::CaseInsensitiveOption), []{
+    {QRegularExpression("[ABCDEFHIJKLOPQRSTUVWXYZ]", QRegularExpression::CaseInsensitiveOption), []{
          QTextCharFormat fmt;
          fmt.setForeground(Qt::blue);
          return fmt;

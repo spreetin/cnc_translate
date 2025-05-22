@@ -1040,7 +1040,7 @@ void parse_node_gen::printTree(parse_node_p rootNode, std::ostream &stream, uint
     } else {
         stream << "nullptr";
     }
-    if (rootNode->hasValue()){
+    if (rootNode && rootNode->hasValue()){
         stream << " ➞ ";
         switch (rootNode->valueType()){
         case 0:
@@ -1069,8 +1069,10 @@ void parse_node_gen::printTree(parse_node_p rootNode, std::ostream &stream, uint
         }
     }
     stream << std::endl;
-    for (const auto &child : rootNode->children()){
-        printTree(child, stream, tabs+1);
+    if (rootNode){
+        for (const auto &child : rootNode->children()){
+            printTree(child, stream, tabs+1);
+        }
     }
 }
 

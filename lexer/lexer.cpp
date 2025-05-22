@@ -55,22 +55,6 @@ int lexer::next()
         if (!((ml_text = checkML(m_next)).empty())){
             vValue = ml_text;
             return RETURN(Token::multi_letter);
-        /*if (std::isalpha(next) && m_pos < text.size() && std::isalpha(text.at(m_pos))){
-            int start = m_pos-1;
-            int c_pos = m_pos;
-            while (c_pos < text.size() && std::isalpha(text.at(c_pos))){
-                c_pos++;
-            }
-            std::string ml = text.substr(start, c_pos-start);
-            vValue = ml;
-            if (multiletter.contains(ml)){
-                m_pos = c_pos;
-                return RETURN(Token::multi_letter);
-            } else {
-
-                m_last_error = {error::Lexing, m_line, pos(), "Function not defined: \"" + ml +"\""};
-                return RETURN(Token::unknown_function);
-            }*/
         } else {
             switch (m_next){
             case ' ':
@@ -105,8 +89,9 @@ int lexer::next()
             }
         }
     }
-    m_last_error = {error::Lexing, m_line, pos(), "Undefined token encountered on \""
-                                                      + text.substr(pos(), text.find('\n', m_pos))};
+    m_last_error = {error::Lexing, m_line, pos(),
+                    "Undefined token encountered on \""
+                        + text.substr(pos(), text.find('\n', m_pos))};
     return Token::error;
 }
 
