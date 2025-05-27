@@ -419,19 +419,25 @@ parse_node_p parser::func()
     if (next == Token::plus || next == Token::minus){
         auto t = next;
         std::string n;
+        int multiplier = 1;
         if (t == Token::plus){
             n = "+";
             match (Token::plus);
         } else {
             n = "-";
+            multiplier = -1;
             match (Token::minus);
         }
         auto e = expr();
-        if (e->type() == Token::num_int || e->type() == Token::num_float){
-            e->setValue("+" + e->stringValue());
+        if (e && e->type() == Token::num_int){
+            e->setValue(multiplier * e->intValue());
+            return e;
+        } else if (e && e->type() == Token::num_float){
+            e->setValue(multiplier * e->doubleValue());
+            return e;
+        } else if(e && e->type() == Token::num_literal){
+            e->setValue(n + e->stringValue());
             e->setType(Token::num_literal);
-        } else if (e->type() == Token::num_literal){
-            e->setValue("+" + e->stringValue());
             return e;
         } else {
             return std::make_shared<parse_node>(t, std::vector<parse_node_p>{e});
