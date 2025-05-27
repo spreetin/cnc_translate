@@ -158,8 +158,6 @@ struct MachineParameters {
     };*/
 
     std::map<int, m_word_definition> m;
-
-    std::map<int,std::shared_ptr<auto_geometry_function>> auto_geometry_functions;
 };
 
 };

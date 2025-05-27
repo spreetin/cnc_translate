@@ -1,15 +1,13 @@
 #ifndef PARAMETER_DEFINITIONS_H
 #define PARAMETER_DEFINITIONS_H
 
+#include <functional>
 #include <map>
 #include <variant>
 #include <set>
-#include <memory>
-
+#include "../parser/parse_node.h"
 
 namespace NCParser {
-
-class auto_geometry_function;
 
 struct variable_group {
     char letter;
@@ -164,7 +162,7 @@ struct g_word_definition {
     int modal = -1;
     std::set<char> parameters;
     std::map<char,ParameterType> parameter_types;
-    std::shared_ptr<auto_geometry_function> func;
+    std::function<std::vector<parse_node_p>()> func;
     bool single_block = false;
 };
 

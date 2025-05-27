@@ -29,7 +29,7 @@ set(
     brands/machine_definitions.h
     brands/brands/traub/traub_definition.h brands/brands/traub/traub_definition.cpp
     brands/parameters.h
-    brands/auto_geometry_function.h brands/auto_geometry_function.cpp
+
     brands/brands/traub/traub_auto_geometry_functions.h brands/brands/traub/traub_auto_geometry_functions.cpp
     brands/parameter_definitions.h
     tokens/g_codes.h
