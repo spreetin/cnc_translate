@@ -50,6 +50,7 @@ set(
     generator/generate_g_cutting.cpp
     tokens/parameter_descriptions.h
     macros/contracts.h
+    libcnc_parse.h libcnc_parse.cpp
 
     # Compile time regular expressions library
     ctre/ctre.hpp ctre/ctre-unicode.hpp ctre/unicode-db.hpp
@@ -77,15 +78,17 @@ add_library (
     $<TARGET_OBJECTS:cnc_parse_internal>
 )
 
-add_library (
-    cnc_parse_test
-    ${common_src}
-)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_library (
+        cnc_parse_test
+        ${common_src}
+    )
 
-add_subdirectory(tests)
+    add_subdirectory(tests)
+    set_target_properties(cnc_parse_test PROPERTIES COMPILE_FLAGS "-DTESTING")
+endif()
 add_subdirectory(cnc_gui)
 
-set_target_properties(cnc_parse_test PROPERTIES COMPILE_FLAGS "-DTESTING")
 
 include(GNUInstallDirs)
 install(TARGETS cnc_translate

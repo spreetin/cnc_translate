@@ -1,6 +1,7 @@
 # cnc_translate
 A library for parsing and translating ISO-code between different NC machines.
 
+Easiest install is through Nix. The repository can be installed either using the traditional nix-build, or as a nix flake. When using flakes different subtargets can be chosen (default, cli, gui, shared, static, library) to just build the parts of the code that is wanted.
 
 ## copyright & license
 Copyright 2025 David Falk
