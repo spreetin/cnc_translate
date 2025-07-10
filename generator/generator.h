@@ -12,6 +12,7 @@ class generator
 {
 public:
     generator(Manufacturers manufacturer, std::string_view machine);
+    generator(MachineParameters params);
 
     std::string generate(parse_node_p root);
 
@@ -24,6 +25,8 @@ public:
     }
 
 protected:
+    void init(MachineParameters params);
+
     MachineParameters param;
     Manufacturers manufacturer;
     std::string_view machine;

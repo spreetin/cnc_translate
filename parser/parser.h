@@ -19,6 +19,7 @@ class parser
 {
 public:
     parser(Manufacturers manufacturer, std::string_view machine);
+    parser(MachineParameters params);
 
     bool parse(std::string text);
 
@@ -36,6 +37,7 @@ public:
 
 protected:
     void init(Manufacturers manufacturer, std::string_view machine);
+    void init(MachineParameters params);
 
     void match(int code);
 

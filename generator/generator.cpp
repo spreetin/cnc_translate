@@ -13,6 +13,22 @@ generator::generator(Manufacturers manufacturer, std::string_view machine) {
     if (topLayer){
         param = topLayer->getParameters();
     }
+    init(param);
+}
+
+generator::generator(MachineParameters params) {
+    init(params);
+}
+
+std::string generator::generate(parse_node_p root)
+{
+    std::stringstream ss;
+    ss << parse_node_gen(&param, root, {}).generate();
+    return ss.str();
+}
+
+void generator::init(MachineParameters params){
+    param = params;
     allowed_multiletter.clear();
     for (auto &item : param.functions.unary){
         allowed_multiletter.insert(item.first);
@@ -23,13 +39,8 @@ generator::generator(Manufacturers manufacturer, std::string_view machine) {
     for (auto &item : param.functions.block){
         allowed_multiletter.insert(item.first);
     }
-}
 
-std::string generator::generate(parse_node_p root)
-{
-    std::stringstream ss;
-    ss << parse_node_gen(&param, root, {}).generate();
-    return ss.str();
+
 }
 
 };

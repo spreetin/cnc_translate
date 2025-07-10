@@ -13,6 +13,12 @@ parser::parser(Manufacturers manufacturer, std::string_view machine)
     init(manufacturer, machine);
 }
 
+parser::parser(MachineParameters params)
+{
+    m_lexer = std::unique_ptr<lexer>(new lexer());
+    init(params);
+}
+
 void parser::init(Manufacturers manufacturer, std::string_view machine)
 {
     this->manufacturer = manufacturer;
@@ -21,6 +27,12 @@ void parser::init(Manufacturers manufacturer, std::string_view machine)
     if (topLayer){
         param = topLayer->getParameters();
     }
+    init(param);
+}
+
+void parser::init(MachineParameters params)
+{
+    param = params;
     allowed_multiletter.clear();
     for (auto &item : param.functions.unary){
         allowed_multiletter.insert(item.first);
