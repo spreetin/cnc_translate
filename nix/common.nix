@@ -45,11 +45,11 @@
         cp libcnc_parse_static.a $out/lib/libcnc_parse.a
     '';
     includeInstallPhase = ''
-        mkdir -p $out/include/{brands,tokens,generator,parser}
+        mkdir -p $out/include/cncparse/{brands,tokens,generator,parser}
         cp ../libcnc_parse.h $out/include
-        cp ../brands/brands.h ../brands/parameters.h ../brands/parameter_definitions.h $out/include/brands
-        cp ../generator/generator.h $out/include/generator
-        cp ../parser/parser.h ../parser/parse_node.h $out/include/parser
-        cp ../tokens/g_codes.h ../tokens/m_codes.h $out/include/tokens
+        cp ../brands/brands.h ../brands/parameters.h ../brands/parameter_definitions.h $out/include/cncparse/brands
+        cp ../generator/generator.h $out/include/cncparse/generator
+        cp ../parser/parser.h ../parser/parse_node.h $out/include/cncparse/parser
+        cp ../tokens/g_codes.h ../tokens/m_codes.h $out/include/cncparse/tokens
     '';
 }
