@@ -7,8 +7,6 @@
     nativeBuildInputs = with pkgs; [
         pkg-config
         cmake
-    ];
-    guiNativeBuildInputs = with pkgs; [
         qt6.qtbase
         qt6.full
         qt6.wrapQtAppsHook
