@@ -46,7 +46,7 @@
     '';
     includeInstallPhase = ''
         mkdir -p $out/include/cncparse/{brands,tokens,generator,parser}
-        cp ../libcnc_parse.h $out/include
+        cp ../libcnc_parse.h $out/include/cncparse/
         cp ../brands/brands.h ../brands/parameters.h ../brands/parameter_definitions.h $out/include/cncparse/brands
         cp ../generator/generator.h $out/include/cncparse/generator
         cp ../parser/parser.h ../parser/parse_node.h $out/include/cncparse/parser
