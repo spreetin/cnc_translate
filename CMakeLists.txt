@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+option(BUILD_GUI_APP "Build the GUI" OFF)
+
 find_package(ctre)
 if (NOT ctre_FOUND)
     message("CTRE not found on system, fetching headers from github.")
@@ -115,8 +117,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_subdirectory(tests)
     set_target_properties(cnc_parse_test PROPERTIES COMPILE_FLAGS "-DTESTING")
 endif()
-add_subdirectory(cnc_gui)
 
+if (BUILD_GUI_APP)
+    add_subdirectory(cnc_gui)
+endif()
 
 include(GNUInstallDirs)
 install(TARGETS cnc_translate
