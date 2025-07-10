@@ -6,6 +6,22 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+find_package(ctre)
+if (NOT ctre_FOUND)
+    message("CTRE not found on system, fetching headers from github.")
+    include(FetchContent)
+    FetchContent_Declare(
+        ctre
+        GIT_REPOSITORY https://github.com/hanickadot/compile-time-regular-expressions.git
+        GIT_TAG        v3.10.0
+    )
+    FetchContent_MakeAvailable(ctre)
+    add_library(ctre_headers INTERFACE)
+    target_include_directories(ctre_headers INTERFACE
+        ${ctre_SOURCE_DIR}/single-header/
+    )
+endif()
+
 add_executable(
     cnc_translate
     main.cpp
@@ -53,7 +69,7 @@ set(
     libcnc_parse.h libcnc_parse.cpp
 
     # Compile time regular expressions library
-    ctre/ctre.hpp ctre/ctre-unicode.hpp ctre/unicode-db.hpp
+    #ctre/ctre.hpp ctre/ctre-unicode.hpp ctre/unicode-db.hpp
 )
 
 add_library (
@@ -61,6 +77,18 @@ add_library (
     OBJECT
     ${common_src}
 )
+
+if (ctre_FOUND)
+    target_link_libraries(
+        cnc_parse_internal
+        ctre::ctre
+    )
+else()
+    target_link_libraries(
+        cnc_parse_internal
+        ctre_headers
+    )
+endif()
 
 set_property(
     TARGET cnc_parse_internal

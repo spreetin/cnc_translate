@@ -18,7 +18,7 @@
         perSystem = { config, self', inputs', pkgs, system, ... }: 
         {
 
-            devShells.default = import ./shell.nix {};
+            devShells.default = import ./shell.nix { inherit pkgs; };
 
             packages = {
                 default = import ./nix/package.nix { inherit pkgs; };

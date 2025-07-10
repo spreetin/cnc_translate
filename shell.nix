@@ -1,15 +1,16 @@
-{ pkgs ? import <nixpkgs> { } }:
+{ pkgs }:
 let
-    common = import ./nix/comon.nix { inherit pkgs; };
+    common = import ./nix/common.nix { inherit pkgs; };
 in
-pkgs.mkShell (common // {
+pkgs.mkShell {
     nativeBuildInputs = common.nativeBuildInputs
-                        + common.guiNativeBuildInputs;
+                        ++ common.guiNativeBuildInputs;
     buildInputs = common.buildInputs
-                + common.guiBuildInputs;
+                ++ common.guiBuildInputs
+                ++ [ pkgs.bashInteractive ];
     shellHook = ''
         bashDir=$(mktemp -d)
         makeWrapper "$(type -p bash)" "$bashDir/bash" "''${qtWrapperArgs[@]}"
         exec "$bashDir/bash"
     '';
-})
+}

@@ -1,5 +1,5 @@
 #include "regex_wrapper.h"
-#include "../ctre/ctre.hpp"
+#include <ctre.hpp>
 
 namespace NCParser {
 
