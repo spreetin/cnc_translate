@@ -8,7 +8,7 @@ in
             make cnc_parse_shared
             make cnc_parse_static
         '';
-        installPhase = + common.sharedLibInstallPhase
+        installPhase = common.sharedLibInstallPhase
                     + common.staticLibInstallPhase
                     + common.includeInstallPhase;
     })
