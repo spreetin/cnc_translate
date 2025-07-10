@@ -4,6 +4,10 @@
     pname = "CNC Translate";
     version = "0.0.1";
     src = pkgs.lib.cleanSource ../.;
+    cmakeFlags = [
+        "-DCMAKE_PREFIX_PATH=${pkgs.qt6.qtbase}"
+        "-DCMAKE_BUILD_TYPE=Release"
+    ];
     nativeBuildInputs = with pkgs; [
         pkg-config
         cmake
@@ -19,11 +23,11 @@
         qt6.qtbase
         qt6.full
     ];
-    configurePhase = ''
-        mkdir build
-        cd build
-        cmake -B . -S ../ -DCMAKE_BUILD_TYPE=Release
-    '';
+    #configurePhase = ''
+    #    mkdir build
+    #    cd build
+    #    cmake -B . -S ../ -DCMAKE_BUILD_TYPE=Release
+    #'';
     binInstallPhase = ''
         mkdir -p $out/bin
         cp cnc_translate $out/bin
