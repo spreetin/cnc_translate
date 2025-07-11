@@ -180,7 +180,7 @@ parse_node_p parser::block()
             std::vector<parse_node_p> blocks;
             match(Token::multi_letter);
             blocks.push_back(expr());
-            while (true){
+            while (true && next != Token::done){
                 if (next == Token::multi_letter && block_definition.end_token == m_lexer->string_value()){
                     match(Token::multi_letter);
                     break;
