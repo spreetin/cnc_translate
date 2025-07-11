@@ -181,6 +181,8 @@ parse_node_p parser::block()
             match(Token::multi_letter);
             if (next != Token::done) {
                 blocks.push_back(expr());
+            } else {
+                return rowItem;
             }
             while (next != Token::done){
                 if (next == Token::multi_letter && block_definition.end_token == m_lexer->string_value()){
