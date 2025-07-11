@@ -185,7 +185,7 @@ parse_node_p parser::block()
                 return rowItem;
             }
             while (next != Token::done){
-                if (next == Token::multi_letter && block_definition.end_token == m_lexer->string_value()){
+                if (next == Token::multi_letter && std::toupper(block_definition.end_token) == std::toupper(m_lexer->string_value())){
                     match(Token::multi_letter);
                     break;
                 }
