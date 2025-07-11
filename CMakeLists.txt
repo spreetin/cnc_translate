@@ -172,7 +172,7 @@ install(
     ${CMAKE_SOURCE_DIR}/parser
     ${CMAKE_SOURCE_DIR}/brands
     ${CMAKE_SOURCE_DIR}/generator
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cnc_translate
 )
 install(FILES libcnc_parse.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
