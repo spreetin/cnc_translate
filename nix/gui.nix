@@ -12,5 +12,4 @@ in
         buildPhase = ''
             make cnc_gui
         '';
-        installPhase = common.guiInstallPhase;
     })

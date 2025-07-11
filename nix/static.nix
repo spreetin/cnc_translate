@@ -4,9 +4,11 @@ let
     common = import ./common.nix { inherit pkgs; };
 in
     pkgs.stdenv.mkDerivation (common // {
+        cmakeFlags = common.cmakeFlags ++ [
+            "-DBUILD_CLI_APP=OFF"
+            "-DBUILD_SHARED_LIB=OFF"
+        ];
         buildPhase = ''
             make cnc_parse_static
         '';
-        installPhase = common.staticLibInstallPhase
-                    + common.includeInstallPhase;
     })

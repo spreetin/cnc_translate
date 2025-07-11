@@ -9,12 +9,4 @@ in
         ];
         buildInputs = common.buildInputs 
                     ++ common.guiBuildInputs;
-        buildPhase = ''
-            make
-        '';
-        installPhase = common.binInstallPhase 
-                    + common.guiInstallPhase
-                    + common.sharedLibInstallPhase
-                    + common.staticLibInstallPhase
-                    + common.includeInstallPhase;
     })

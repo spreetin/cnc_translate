@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(cnc_translate LANGUAGES CXX)
+project(cnc_translate VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(BUILD_GUI_APP "Build the GUI" OFF)
+option(BUILD_CLI_APP "Build the CLI" ON)
+option(BUILD_SHARED_LIB "Build shared library" ON)
 
 find_package(ctre)
 if (NOT ctre_FOUND)
@@ -24,16 +26,18 @@ if (NOT ctre_FOUND)
     )
 endif()
 
-add_executable(
-    cnc_translate
-    main.cpp
-    cli_options.h cli_options.cpp
-)
+if(BUILD_CLI_APP)
+    add_executable(
+        cnc_translate
+        main.cpp
+        cli_options.h cli_options.cpp
+    )
 
-target_link_libraries(
-    cnc_translate
-    cnc_parse_static
-)
+    target_link_libraries(
+        cnc_translate
+        cnc_parse_static
+    )
+endif()
 
 set(
     common_src
@@ -97,11 +101,13 @@ set_property(
     PROPERTY POSITION_INDEPENDENT_CODE 1
 )
 
-add_library (
-    cnc_parse_shared
-    SHARED
-    $<TARGET_OBJECTS:cnc_parse_internal>
-)
+if(BUILD_SHARED_LIB)
+    add_library (
+        cnc_parse_shared
+        SHARED
+        $<TARGET_OBJECTS:cnc_parse_internal>
+    )
+endif()
 add_library (
     cnc_parse_static
     STATIC
@@ -122,8 +128,54 @@ if (BUILD_GUI_APP)
     add_subdirectory(cnc_gui)
 endif()
 
-include(GNUInstallDirs)
-install(TARGETS cnc_translate
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#include(GNUInstallDirs)
+#install(TARGETS cnc_translate
+#    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+#)
+
+install(
+    TARGETS
+    cnc_parse_static
+    cnc_parse_shared
+    cnc_translate
+    EXPORT cnc_translateTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+install(
+    DIRECTORY
+    ${CMAKE_SOURCE_DIR}/tokens
+    ${CMAKE_SOURCE_DIR}/parser
+    ${CMAKE_SOURCE_DIR}/brands
+    ${CMAKE_SOURCE_DIR}/generator
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+install(FILES libcnc_parse.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+# Install the export set
+install(EXPORT cnc_translateTargets
+    FILE cnc_translateTargets.cmake
+    NAMESPACE cnc_translate::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cnc_translate
+)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/cnc_translateConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_LIST_DIR}/cmake/cnc_translateConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/cnc_translateConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cnc_translate
+)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/cnc_translateConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/cnc_translateConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cnc_translate
 )
