@@ -1,6 +1,6 @@
-#include <cnc_translate/brands/brands.h>
-#include <cnc_translate/parser/parse_node.h>
-#include <cnc_translate/brands/parameters.h>
+#include "brands/brands.h"
+#include "parser/parse_node.h"
+#include "brands/parameters.h"
 #include <vector>
 #include <string_view>
 

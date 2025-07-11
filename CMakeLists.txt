@@ -73,7 +73,7 @@ set(
     generator/generate_g_cutting.cpp
     tokens/parameter_descriptions.h
     macros/contracts.h
-    libcnc_parse.h libcnc_parse.cpp
+    libcnc_parse_internal.h libcnc_parse.cpp
 
     # Compile time regular expressions library
     #ctre/ctre.hpp ctre/ctre-unicode.hpp ctre/unicode-db.hpp
