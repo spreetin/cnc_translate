@@ -6,6 +6,7 @@ in
     pkgs.stdenv.mkDerivation (common // {
         cmakeFlags = common.cmakeFlags ++ [
             "-DBUILD_SHARED_LIB=OFF"
+            "-DBUILD_STATIC_LIB=OFF"
         ];
         buildInputs = common.buildInputs;
         buildPhase = ''

@@ -6,6 +6,7 @@ in
     pkgs.stdenv.mkDerivation (common // {
         cmakeFlags = common.cmakeFlags ++ [
             "-DBUILD_CLI_APP=OFF"
+            "-DBUILD_STATIC_LIB=OFF"
         ];
         buildPhase = ''
             make cnc_parse_shared

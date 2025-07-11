@@ -9,6 +9,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 option(BUILD_GUI_APP "Build the GUI" OFF)
 option(BUILD_CLI_APP "Build the CLI" ON)
 option(BUILD_SHARED_LIB "Build shared library" ON)
+option(BUILD_STATIC_LIB "Build static library" ON)
 
 find_package(ctre)
 if (NOT ctre_FOUND)
@@ -134,16 +135,37 @@ endif()
 #    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 #)
 
-install(
-    TARGETS
-    cnc_parse_static
-    cnc_parse_shared
-    cnc_translate
-    EXPORT cnc_translateTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if(BUILD_CLI_APP)
+    install(
+        TARGETS
+        cnc_translate
+        EXPORT cnc_translateTargets
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+endif()
+
+if(BUILD_SHARED_LIB)
+    install(
+        TARGETS 
+        cnc_parse_shared 
+        EXPORT cnc_translateTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+endif()
+
+if(BUILD_STATIC_LIB)
+    install(
+        TARGETS 
+        cnc_parse_static 
+        EXPORT cnc_translateTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+endif()
+
 install(
     DIRECTORY
     ${CMAKE_SOURCE_DIR}/tokens
