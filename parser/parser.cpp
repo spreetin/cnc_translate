@@ -179,6 +179,7 @@ parse_node_p parser::block()
             auto block_definition = param.functions.block.at(ml);
             std::vector<parse_node_p> blocks;
             match(Token::multi_letter);
+            blocks.push_back(expr());
             while (true){
                 if (next == Token::multi_letter && block_definition.end_token == m_lexer->string_value()){
                     match(Token::multi_letter);
