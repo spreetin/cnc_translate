@@ -2,6 +2,7 @@
 #include "../brands/machine_definitions.h"
 #include <iostream>
 #include <memory>
+#include <algorithm>
 #include "parse_node.h"
 #include "../tokens/tokens.h"
 
@@ -185,7 +186,11 @@ parse_node_p parser::block()
                 return rowItem;
             }
             while (next != Token::done){
-                if (next == Token::multi_letter && std::toupper(block_definition.end_token) == std::toupper(m_lexer->string_value())){
+                std::string str1 = block_definition.end_token;
+                std::transform(str1.begin(), str1.end(), str1.begin(), ::toupper);
+                std::string str2 = m_lexer->string_value();
+                std::transform(str2.begin(), str2.end(), str2.begin(), ::toupper);
+                if (next == Token::multi_letter && str1 == str2){
                     match(Token::multi_letter);
                     break;
                 }
