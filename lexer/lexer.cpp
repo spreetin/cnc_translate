@@ -290,6 +290,7 @@ std::string lexer::checkML(char next)
             c_pos++;
         }
         std::string ml = text.substr(start, c_pos-start);
+        std::transform(ml.begin(), ml.end(), ml.begin(), ::toupper);
         if (multiletter.contains(ml)){
             m_pos = c_pos;
             return ml;
