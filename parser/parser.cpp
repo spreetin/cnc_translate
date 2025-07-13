@@ -42,7 +42,8 @@ void parser::init(MachineParameters params)
         allowed_multiletter.insert(item.first);
     }
     for (auto &item : param.functions.block){
-        allowed_multiletter.insert(item.first);
+        allowed_multiletter.insert(item.second.start_token);
+        allowed_multiletter.insert(item.second.end_token);
     }
     for (auto &item : param.g){
         if (item.second.word.index()){
