@@ -12,7 +12,7 @@ parse_node_p parse(Manufacturers man, std::string_view machine,
   return r;
 }
 
-parse_node_p parse(MachineParameters &param, std::string text) {
+parse_node_p parse(MachineParameters param, std::string text) {
   parser p = parser(param);
   p.parse(text);
   auto r = p.result();
@@ -26,13 +26,13 @@ std::string generate(Manufacturers man, std::string_view machine,
   return r;
 }
 
-std::string generate(MachineParameters &param, parse_node_p nodes) {
+std::string generate(MachineParameters param, parse_node_p nodes) {
   generator g = generator(param);
   auto r = g.generate(nodes);
   return r;
 }
 
-std::string printParseTree(MachineParameters &param, parse_node_p rootNode) {
+std::string printParseTree(MachineParameters param, parse_node_p rootNode) {
   generator g = generator(param);
   return g.printTree(rootNode);
 }
