@@ -335,7 +335,7 @@ std::vector<parse_node_p> parser::g(bool continuingWord) {
   int code;
   if (!continuingWord) {
     code = m_lexer->int_value();
-    std::cout << "G-code: " code << std::endl;
+    std::cout << "G-code: " << code << std::endl;
     match(Token::g_word);
   } else {
     code = last_prepatory_word;
