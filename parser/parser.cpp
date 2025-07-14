@@ -122,6 +122,7 @@ parse_node_p parser::block() {
    * M The order of parameters are accepted even when they would be wrong
    * according to the standard.
    */
+  std::cout << "Block" << std::endl;
   auto rowItem = std::make_shared<parse_node>(Token::block);
   if (next == Token::slash) {
     match(Token::slash);
