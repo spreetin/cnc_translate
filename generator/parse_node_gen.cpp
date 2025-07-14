@@ -1380,6 +1380,8 @@ void parse_node_gen::printTree(parse_node_p rootNode, std::ostream &stream,
     case 2:
       stream << "String: \"" << rootNode->stringValue() << "\"";
       break;
+    default:
+      stream << "unknown value type";
     }
   } else {
     stream << " ➞ no value";
