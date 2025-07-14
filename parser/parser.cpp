@@ -54,9 +54,6 @@ void parser::init(MachineParameters params) {
   for (auto &item : param.m) {
     active_m_numbers[item.second.num] = item.first;
   }
-  for (auto &item : active_g_numbers) {
-    std::cout << item.first << "->" << item.second << std::endl;
-  }
 }
 
 bool parser::parse(std::string text) {
@@ -213,7 +210,6 @@ parse_node_p parser::block() {
     }
   }
   if (next == Token::g_word) {
-    std::cout << "G code found!" << std::endl;
     while (next == Token::g_word) {
       rowItem->appendChildren(g());
     }
