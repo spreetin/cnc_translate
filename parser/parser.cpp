@@ -54,6 +54,9 @@ void parser::init(MachineParameters params) {
   for (auto &item : param.m) {
     active_m_numbers[item.second.num] = item.first;
   }
+  for (auto &item : active_g_numbers) {
+    std::cout << item.first << "->" << item.second << std::endl;
+  }
 }
 
 bool parser::parse(std::string text) {
@@ -122,7 +125,6 @@ parse_node_p parser::block() {
    * M The order of parameters are accepted even when they would be wrong
    * according to the standard.
    */
-  std::cout << "Block" << std::endl;
   auto rowItem = std::make_shared<parse_node>(Token::block);
   if (next == Token::slash) {
     match(Token::slash);
@@ -335,7 +337,6 @@ std::vector<parse_node_p> parser::g(bool continuingWord) {
   int code;
   if (!continuingWord) {
     code = m_lexer->int_value();
-    std::cout << "G-code: " << code << std::endl;
     match(Token::g_word);
   } else {
     code = last_prepatory_word;
